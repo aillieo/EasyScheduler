@@ -1,0 +1,12 @@
+{
+  "name": "com.aillieo.easy-scheduler",
+  "displayName": "AillieoUtils Easy Scheduler",
+  "description": "AillieoUtils Easy Scheduler",
+  "version": "1.0.0",
+  "unity": "2018.4",
+  "license": "MIT",
+  "dependencies": {
+    "com.aillieo.easy-events": "https://github.com/aillieo/EasyEvent.git#upm",
+    "com.aillieo.unity-singleton": "https://github.com/aillieo/UnitySingleton.git#upm"
+  }
+}

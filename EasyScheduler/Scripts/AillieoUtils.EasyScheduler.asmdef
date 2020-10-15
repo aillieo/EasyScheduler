@@ -1,0 +1,16 @@
+{
+    "name": "AillieoUtils.EasyScheduler",
+    "references": [
+        "AillieoUtils.EasyEvents",
+        "AillieoUtils.UnitySingleton"
+    ],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}
