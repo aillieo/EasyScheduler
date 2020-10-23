@@ -12,6 +12,7 @@ namespace AillieoUtils
         internal Action action;
         internal float interval;
         internal LinkedListNode<Task> handle;
+        public float speedRate { get; set; } = 1;
 
         internal Task()
         {
