@@ -14,6 +14,8 @@ namespace AillieoUtils
         private readonly Event fixedUpdate = new Event();
         private readonly ConcurrentQueue<Action> tasks = new ConcurrentQueue<Action>();
         private readonly LinkedList<Task> managedTasks = new LinkedList<Task>();
+        private readonly LinkedList<Task> managedTaskUnscaled = new LinkedList<Task>();
+        
         private readonly List<Task> tasksToProcess = new List<Task>();
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.BeforeSceneLoad)]
@@ -45,7 +47,8 @@ namespace AillieoUtils
                 Debug.LogError(e);
             }
 
-            ProcessTimingTasks();
+            ProcessTimingTasks(managedTasks, Time.deltaTime);
+            ProcessTimingTasks(managedTaskUnscaled, Time.unscaledDeltaTime);
         }
 
         public static Handle ScheduleLateUpdate(Action action)
@@ -101,30 +104,55 @@ namespace AillieoUtils
 
         public static Task ScheduleOnce(Action action, float delay)
         {
-            return CreateTask(action, 1, 0, delay);
+            return CreateTask(action, 1, 0, delay, false);
         }
 
         public static Task ScheduleWithDelay(Action action, float interval, float delay)
         {
-            return CreateTask(action, -1, interval, delay);
+            return CreateTask(action, -1, interval, delay, false);
         }
 
         public static Task Schedule(Action action, float interval)
         {
-            return CreateTask(action, -1, interval, 0);
+            return CreateTask(action, -1, interval, 0, false);
         }
 
         public static Task ScheduleWithDelay(Action action, int times, float interval, float delay)
         {
-            return CreateTask(action, times, interval, delay);
+            return CreateTask(action, times, interval, delay, false);
         }
 
         public static Task Schedule(Action action, int times ,float interval)
         {
-            return CreateTask(action, times, interval, 0);
+            return CreateTask(action, times, interval, 0, false);
         }
 
-        private static Task CreateTask(Action action, int times, float interval, float delay)
+        public static Task ScheduleOnceUnscaled(Action action, float delay)
+        {
+            return CreateTask(action, 1, 0, delay, true);
+        }
+
+        public static Task ScheduleWithDelayUnscaled(Action action, float interval, float delay)
+        {
+            return CreateTask(action, -1, interval, delay, true);
+        }
+
+        public static Task ScheduleUnscaled(Action action, float interval)
+        {
+            return CreateTask(action, -1, interval, 0, true);
+        }
+
+        public static Task ScheduleWithDelayUnscaled(Action action, int times, float interval, float delay)
+        {
+            return CreateTask(action, times, interval, delay, true);
+        }
+
+        public static Task ScheduleUnscaled(Action action, int times, float interval)
+        {
+            return CreateTask(action, times, interval, 0, true);
+        }
+
+        private static Task CreateTask(Action action, int times, float interval, float delay, bool useUnscaledTime)
         {
             Task task = new Task() {
                 action = action,
@@ -132,7 +160,16 @@ namespace AillieoUtils
                 interval = interval,
                 timer = - delay,
             };
-            task.handle = Instance.managedTasks.AddLast(task);
+
+            if(useUnscaledTime)
+            {
+                task.handle = Instance.managedTaskUnscaled.AddLast(task);
+            }
+            else
+            {
+                task.handle = Instance.managedTasks.AddLast(task);
+            }
+
             return task;
         }
 
@@ -172,13 +209,12 @@ namespace AillieoUtils
             }
         }
 
-        private void ProcessTimingTasks()
+        private void ProcessTimingTasks(LinkedList<Task> tasks, float delta)
         {
-            tasksToProcess.AddRange(managedTasks);
-            float deltaTime = Time.deltaTime;
+            tasksToProcess.AddRange(tasks);
             foreach (var task in tasksToProcess)
             {
-                task.timer += deltaTime;
+                task.timer += delta * task.speedRate;
                 while(task.timer > task.interval)
                 {
                     task.timer -= task.interval;
@@ -196,7 +232,7 @@ namespace AillieoUtils
                         task.times--;
                         if(task.times == 0)
                         {
-                            managedTasks.Remove(task.handle);
+                            tasks.Remove(task.handle);
                             task.handle = null;
                             break;
                         }
