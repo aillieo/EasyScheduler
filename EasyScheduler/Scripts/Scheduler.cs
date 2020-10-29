@@ -40,7 +40,7 @@ namespace AillieoUtils
 
             try
             {
-                update.Invoke();
+                update.SafeInvoke();
             }
             catch(Exception e)
             {
@@ -67,7 +67,7 @@ namespace AillieoUtils
 
             try
             {
-                lateUpdate.Invoke();
+                lateUpdate.SafeInvoke();
             }
             catch (Exception e)
             {
@@ -89,7 +89,7 @@ namespace AillieoUtils
         {
             try
             {
-                fixedUpdate.Invoke();
+                fixedUpdate.SafeInvoke();
             }
             catch (Exception e)
             {
@@ -234,12 +234,28 @@ namespace AillieoUtils
                         {
                             tasks.Remove(task.handle);
                             task.handle = null;
+                            task.isDone = true;
                             break;
                         }
                     }
                 }
             }
             tasksToProcess.Clear();
+        }
+
+        public static Coroutine StartUnityCoroutine(IEnumerator routine)
+        {
+            return Instance.StartCoroutine(routine);
+        }
+
+        public static void StopUnityCoroutine(Coroutine routine)
+        {
+            Instance.StopCoroutine(routine);
+        }
+        
+        public static void StopAllUnityCoroutines()
+        {
+            Instance.StopAllCoroutines();
         }
     }
 }
