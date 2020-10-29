@@ -13,6 +13,7 @@ namespace AillieoUtils
         internal float interval;
         internal LinkedListNode<Task> handle;
         public float speedRate { get; set; } = 1;
+        public bool isDone { get; internal set; } = false;
 
         internal Task()
         {
