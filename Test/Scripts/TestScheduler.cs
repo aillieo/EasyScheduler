@@ -1,4 +1,5 @@
-﻿using System.Collections;
+using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Threading;
 using UnityEngine;
@@ -19,15 +20,18 @@ namespace AillieoUtils.Tests
         {
             //TestWithExceptions();
 
+            TestDelay();
             TestPost();
+            TestSend();
+
             TestScheduleOnce();
             TestSchedule1();
             TestSchedule2();
             TestSchedule3();
 
-            this.updateTimes = 0;
-            this.lateUpdateTimes = 0;
-            this.fixedUpdateTimes = 0;
+            updateTimes = 0;
+            lateUpdateTimes = 0;
+            fixedUpdateTimes = 0;
             TestScheduleUpdate();
             TestScheduleLateUpdate();
             TestScheduleFixedUpdate();
@@ -37,16 +41,68 @@ namespace AillieoUtils.Tests
         {
             var main = Thread.CurrentThread.ManagedThreadId;
             STask task = STask.Factory.StartNew(() => {
-                var newThread = Thread.CurrentThread.ManagedThreadId;
-                Scheduler.Post(() => {
-                    AssertAreNotEqual(newThread, Thread.CurrentThread.ManagedThreadId);
-                    AssertAreEqual(main, Thread.CurrentThread.ManagedThreadId);
-                });
+                try
+                {
+                    var newThread = Thread.CurrentThread.ManagedThreadId;
+                    Scheduler.Post(() => {
+                        AssertAreNotEqual(newThread, Thread.CurrentThread.ManagedThreadId);
+                        AssertAreEqual(main, Thread.CurrentThread.ManagedThreadId);
+                    });
+                }
+                catch (Exception e)
+                {
+                    Debug.LogError(e);
+                }
             });
 
             Scheduler.Post(() => {
                 AssertAreEqual(main, Thread.CurrentThread.ManagedThreadId);
             });
+        }
+
+        private void TestSend()
+        {
+            int n = 0;
+            var main = Thread.CurrentThread.ManagedThreadId;
+            STask task = STask.Factory.StartNew(() => {
+                try
+                {
+                    var newThread = Thread.CurrentThread.ManagedThreadId;
+                    AssertAreEqual(n, 0);
+                    Interlocked.Increment(ref n);
+                    AssertAreEqual(n, 1);
+                    Scheduler.Send(() => {
+                        AssertAreNotEqual(newThread, Thread.CurrentThread.ManagedThreadId);
+                        AssertAreEqual(main, Thread.CurrentThread.ManagedThreadId);
+                        AssertAreEqual(n, 1);
+                        Interlocked.Increment(ref n);
+                        AssertAreEqual(n, 2);
+                    });
+                    AssertAreEqual(n, 2);
+                    Interlocked.Increment(ref n);
+                    AssertAreEqual(n, 3);
+                    Scheduler.Send(() => {
+                        AssertAreNotEqual(newThread, Thread.CurrentThread.ManagedThreadId);
+                        AssertAreEqual(main, Thread.CurrentThread.ManagedThreadId);
+                        AssertAreEqual(n, 3);
+                        Interlocked.Increment(ref n);
+                        AssertAreEqual(n, 4);
+                    });
+                    AssertAreEqual(newThread, Thread.CurrentThread.ManagedThreadId);
+                }
+                catch(Exception e)
+                {
+                    Debug.LogError(e);
+                }
+            });
+        }
+
+        private void TestDelay()
+        {
+            int n = 0;
+            Scheduler.Delay(()=> { n++; });
+            AssertAreEqual(n, 0);
+            Scheduler.Delay(() => { AssertAreEqual(n, 1); });
         }
 
         private void TestScheduleOnce()
@@ -173,15 +229,14 @@ namespace AillieoUtils.Tests
         private void AssertAreEqual<T>(T expected, T actual)
         {
             Assert.AreEqual(expected, actual);
-            testCount++;
-            Debug.Log($"[{Time.realtimeSinceStartup}] {testCount}");
+            Interlocked.Increment(ref testCount);
+            Scheduler.Send(() => Debug.Log($"[{Time.realtimeSinceStartup}] {testCount}"));
         }
         private void AssertAreNotEqual<T>(T expected, T actual)
         {
             Assert.AreNotEqual(expected, actual);
-            testCount++;
-            Debug.Log($"[{Time.realtimeSinceStartup}] {testCount}");
+            Interlocked.Increment(ref testCount);
+            Scheduler.Send(() => Debug.Log($"[{Time.realtimeSinceStartup}] {testCount}"));
         }
     }
-
 }
