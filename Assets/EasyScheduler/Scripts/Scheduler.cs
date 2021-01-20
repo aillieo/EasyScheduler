@@ -1,8 +1,10 @@
-﻿using System;
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using System.Collections.Concurrent;
+using System.Threading;
+using UnityEngine.Assertions;
 
 namespace AillieoUtils
 {
@@ -12,11 +14,19 @@ namespace AillieoUtils
         private readonly Event update = new Event();
         private readonly Event lateUpdate = new Event();
         private readonly Event fixedUpdate = new Event();
-        private readonly ConcurrentQueue<Action> tasks = new ConcurrentQueue<Action>();
+        private readonly Queue<Action> delayTasks = new Queue<Action>();
         private readonly LinkedList<Task> managedTasks = new LinkedList<Task>();
         private readonly LinkedList<Task> managedTaskUnscaled = new LinkedList<Task>();
         
         private readonly List<Task> tasksToProcess = new List<Task>();
+        private readonly SynchronizationContext synchronizationContext;
+
+        public Scheduler()
+        {
+            synchronizationContext = SynchronizationContext.Current;
+            // typeof(UnitySynchronizationContext)
+            Assert.IsNotNull(synchronizationContext);
+        }
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.BeforeSceneLoad)]
         private static void InitializeOnLoad()
@@ -36,7 +46,7 @@ namespace AillieoUtils
 
         private void Update()
         {
-            ProcessTasks();
+            ProcessDelayTasks();
 
             try
             {
@@ -63,7 +73,7 @@ namespace AillieoUtils
 
         private void LateUpdate()
         {
-            ProcessTasks();
+            ProcessDelayTasks();
 
             try
             {
@@ -97,9 +107,29 @@ namespace AillieoUtils
             }
         }
 
+        public static void Delay(Action action)
+        {
+            Instance.delayTasks.Enqueue(action);
+        }
+
         public static void Post(Action action)
         {
-            Instance.tasks.Enqueue(action);
+            Instance.synchronizationContext.Post(_ => action(), null);
+        }
+
+        public static void Post(SendOrPostCallback callback, object arg)
+        {
+            Instance.synchronizationContext.Post(callback, arg);
+        }
+
+        public static void Send(Action action)
+        {
+            Instance.synchronizationContext.Send(_ => action(), null);
+        }
+
+        public static void Send(SendOrPostCallback callback, object arg)
+        {
+            Instance.synchronizationContext.Send(callback, arg);
         }
 
         public static Task ScheduleOnce(Action action, float delay)
@@ -190,21 +220,18 @@ namespace AillieoUtils
             return false;
         }
 
-        private void ProcessTasks()
+        private void ProcessDelayTasks()
         {
-            Action action;
-            while (tasks.Count > 0)
+            while (delayTasks.Count > 0)
             {
-                if (tasks.TryDequeue(out action))
+                Action action = delayTasks.Dequeue();
+                try 
                 {
-                    try 
-                    {
-                        action.Invoke();
-                    }
-                    catch (Exception e)
-                    {
-                        Debug.LogError(e);
-                    }
+                    action.Invoke();
+                }
+                catch (Exception e)
+                {
+                    Debug.LogError(e);
                 }
             }
         }
