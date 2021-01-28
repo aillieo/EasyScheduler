@@ -1,21 +1,21 @@
-﻿using System;
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
 namespace AillieoUtils
 {
-    public class Task
+    public class ScheduledTask
     {
         internal float timer;
         internal int times;
         internal Action action;
         internal float interval;
-        internal LinkedListNode<Task> handle;
+        internal LinkedListNode<ScheduledTask> handle;
         public float speedRate { get; set; } = 1;
         public bool isDone { get; internal set; } = false;
 
-        internal Task()
+        internal ScheduledTask()
         {
 
         }
@@ -26,4 +26,3 @@ namespace AillieoUtils
         }
     }
 }
-

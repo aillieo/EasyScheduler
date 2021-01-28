@@ -2,10 +2,9 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Threading;
+using System.Threading.Tasks;
 using UnityEngine;
 using UnityEngine.Assertions;
-using ATask = AillieoUtils.Task;
-using STask = System.Threading.Tasks.Task;
 
 namespace AillieoUtils.Tests
 {
@@ -40,7 +39,7 @@ namespace AillieoUtils.Tests
         private void TestPost()
         {
             var main = Thread.CurrentThread.ManagedThreadId;
-            STask task = STask.Factory.StartNew(() => {
+            Task task = Task.Factory.StartNew(() => {
                 try
                 {
                     var newThread = Thread.CurrentThread.ManagedThreadId;
@@ -64,7 +63,7 @@ namespace AillieoUtils.Tests
         {
             int n = 0;
             var main = Thread.CurrentThread.ManagedThreadId;
-            STask task = STask.Factory.StartNew(() => {
+            Task task = Task.Factory.StartNew(() => {
                 try
                 {
                     var newThread = Thread.CurrentThread.ManagedThreadId;
