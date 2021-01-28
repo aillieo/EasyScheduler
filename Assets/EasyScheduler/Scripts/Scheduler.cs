@@ -15,10 +15,10 @@ namespace AillieoUtils
         private readonly Event lateUpdate = new Event();
         private readonly Event fixedUpdate = new Event();
         private readonly Queue<Action> delayTasks = new Queue<Action>();
-        private readonly LinkedList<Task> managedTasks = new LinkedList<Task>();
-        private readonly LinkedList<Task> managedTaskUnscaled = new LinkedList<Task>();
+        private readonly LinkedList<ScheduledTask> managedTasks = new LinkedList<ScheduledTask>();
+        private readonly LinkedList<ScheduledTask> managedTaskUnscaled = new LinkedList<ScheduledTask>();
         
-        private readonly List<Task> tasksToProcess = new List<Task>();
+        private readonly List<ScheduledTask> tasksToProcess = new List<ScheduledTask>();
         private readonly SynchronizationContext synchronizationContext;
 
         public Scheduler()
@@ -132,59 +132,59 @@ namespace AillieoUtils
             Instance.synchronizationContext.Send(callback, arg);
         }
 
-        public static Task ScheduleOnce(Action action, float delay)
+        public static ScheduledTask ScheduleOnce(Action action, float delay)
         {
             return CreateTask(action, 1, 0, delay, false);
         }
 
-        public static Task ScheduleWithDelay(Action action, float interval, float delay)
+        public static ScheduledTask ScheduleWithDelay(Action action, float interval, float delay)
         {
             return CreateTask(action, -1, interval, delay, false);
         }
 
-        public static Task Schedule(Action action, float interval)
+        public static ScheduledTask Schedule(Action action, float interval)
         {
             return CreateTask(action, -1, interval, 0, false);
         }
 
-        public static Task ScheduleWithDelay(Action action, int times, float interval, float delay)
+        public static ScheduledTask ScheduleWithDelay(Action action, int times, float interval, float delay)
         {
             return CreateTask(action, times, interval, delay, false);
         }
 
-        public static Task Schedule(Action action, int times ,float interval)
+        public static ScheduledTask Schedule(Action action, int times ,float interval)
         {
             return CreateTask(action, times, interval, 0, false);
         }
 
-        public static Task ScheduleOnceUnscaled(Action action, float delay)
+        public static ScheduledTask ScheduleOnceUnscaled(Action action, float delay)
         {
             return CreateTask(action, 1, 0, delay, true);
         }
 
-        public static Task ScheduleWithDelayUnscaled(Action action, float interval, float delay)
+        public static ScheduledTask ScheduleWithDelayUnscaled(Action action, float interval, float delay)
         {
             return CreateTask(action, -1, interval, delay, true);
         }
 
-        public static Task ScheduleUnscaled(Action action, float interval)
+        public static ScheduledTask ScheduleUnscaled(Action action, float interval)
         {
             return CreateTask(action, -1, interval, 0, true);
         }
 
-        public static Task ScheduleWithDelayUnscaled(Action action, int times, float interval, float delay)
+        public static ScheduledTask ScheduleWithDelayUnscaled(Action action, int times, float interval, float delay)
         {
             return CreateTask(action, times, interval, delay, true);
         }
 
-        public static Task ScheduleUnscaled(Action action, int times, float interval)
+        public static ScheduledTask ScheduleUnscaled(Action action, int times, float interval)
         {
             return CreateTask(action, times, interval, 0, true);
         }
 
-        private static Task CreateTask(Action action, int times, float interval, float delay, bool useUnscaledTime)
+        private static ScheduledTask CreateTask(Action action, int times, float interval, float delay, bool useUnscaledTime)
         {
-            Task task = new Task() {
+            ScheduledTask task = new ScheduledTask() {
                 action = action,
                 times = times,
                 interval = interval,
@@ -203,21 +203,16 @@ namespace AillieoUtils
             return task;
         }
 
-        public static bool Unschedule(Task task)
+        public static bool Unschedule(ScheduledTask task)
         {
             if(task == null || task.handle == null)
             {
                 return false;
             }
 
-            if(task.handle.List == Instance.managedTasks)
-            {
-                Instance.managedTasks.Remove(task.handle);
-                task.handle = null;
-                return true;
-            }
-
-            return false;
+            task.handle.List.Remove(task.handle);
+            task.handle = null;
+            return true;
         }
 
         private void ProcessDelayTasks()
@@ -236,7 +231,7 @@ namespace AillieoUtils
             }
         }
 
-        private void ProcessTimingTasks(LinkedList<Task> tasks, float delta)
+        private void ProcessTimingTasks(LinkedList<ScheduledTask> tasks, float delta)
         {
             tasksToProcess.AddRange(tasks);
             foreach (var task in tasksToProcess)
