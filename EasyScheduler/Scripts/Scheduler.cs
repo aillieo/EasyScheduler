@@ -44,6 +44,11 @@ namespace AillieoUtils
             return Instance.update.Remove(handle);
         }
 
+        public static int UnscheduleUpdate(Action action)
+        {
+            return Instance.update.RemoveListener(action);
+        }
+
         private void Update()
         {
             ProcessDelayTasks();
@@ -71,6 +76,11 @@ namespace AillieoUtils
             return Instance.lateUpdate.Remove(handle);
         }
 
+        public static int UnscheduleLateUpdate(Action action)
+        {
+            return Instance.lateUpdate.RemoveListener(action);
+        }
+
         private void LateUpdate()
         {
             ProcessDelayTasks();
@@ -93,6 +103,11 @@ namespace AillieoUtils
         public static bool UnscheduleFixedUpdate(Handle handle)
         {
             return Instance.fixedUpdate.Remove(handle);
+        }
+
+        public static int UnscheduleFixedUpdate(Action action)
+        {
+            return Instance.fixedUpdate.RemoveListener(action);
         }
 
         private void FixedUpdate()
