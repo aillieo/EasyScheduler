@@ -1,11 +1,19 @@
 {
-    "$schema": "https://raw.githubusercontent.com/DotNetAnalyzers/StyleCopAnalyzers/master/StyleCop.Analyzers/StyleCop.Analyzers/Settings/stylecop.schema.json",
-    "settings": {
-        "layoutRules": {
-            "newlineAtEndOfFile": "require"
-        },
-        "documentationRules": {
-            "companyName": "AilleoTech"
-        }
+  "$schema": "https://raw.githubusercontent.com/DotNetAnalyzers/StyleCopAnalyzers/master/StyleCop.Analyzers/StyleCop.Analyzers/Settings/stylecop.schema.json",
+  "settings": {
+      "layoutRules": {
+          "newlineAtEndOfFile": "require"
+      },
+      "documentationRules": {
+      "copyrightText": "Copyright {year} {authorName}. All rights reserved.\nLicensed under the {licenseName} license. See {licenseFile} file in the project root for full license information.",
+      "variables": {
+      	"year": "2021",
+      	"authorName": "Aillieo",
+        "licenseName": "MIT",
+        "licenseFile": "LICENSE"
+      },
+      "fileNamingConvention": "metadata",
+      "xmlHeader": false
     }
+  }
 }

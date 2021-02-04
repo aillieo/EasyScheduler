@@ -38,11 +38,11 @@
   "lock": {
     "com.aillieo.unity-singleton": {
       "revision": "upm",
-      "hash": "656e3f0bde5b54f1f125e89fe300b46a8ed5057f"
+      "hash": "72acce70f260dfd549ca237d9141465a1910ac0a"
     },
     "com.aillieo.easy-events": {
       "revision": "upm",
-      "hash": "8d180b86d767c7dfee8941677503fe706f4c3991"
+      "hash": "49748580241f34c9b605f26998bd31118845e0e7"
     }
   }
 }
