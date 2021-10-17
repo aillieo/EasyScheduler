@@ -2,7 +2,8 @@
     "name": "AillieoUtils.EasyScheduler",
     "references": [
         "AillieoUtils.EasyEvents",
-        "AillieoUtils.UnitySingleton"
+        "AillieoUtils.UnitySingleton",
+        "AillieoUtils.Collections"
     ],
     "includePlatforms": [],
     "excludePlatforms": [],
