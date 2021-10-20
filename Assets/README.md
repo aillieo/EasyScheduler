@@ -33,6 +33,25 @@ Scheduler.ScheduleWithDelay(() => Debug.Log("Every 0.1s after 2s"), 0.1f, 2);
 Scheduler.ScheduleUnscaled(() => Debug.Log("Every 0.1s ignoring timescale"), 0.1f);
 ```
 
+A proper schedule mode leads to better runtime performance. When trying to create a scheduled task there are three modes to select, Dynamic, Static, and LongTerm.
+
+- ScheduleMode.Dynamic: for short lifespan tasks and intended to be created/deleted frequently.
+
+- ScheduleMode.Static: for tasks that exist long lifespans and are NOT created/deleted frequently.
+
+- ScheduleMode.LongTerm: for tasks are executed at very long intervals and are NOT intended to be created/deleted frequently.
+
+Schedule mode can be explicitly assigned, like this:
+
+```c#
+Scheduler.Schedule(() => Debug.Log("Every 0.1s and 10 times"), ScheduleMode.Dynamic, 10, 0.1f);
+Scheduler.Schedule(() => Debug.Log("Every 0.1s"), ScheduleMode.Static, 0.1f);
+Scheduler.Schedule(() => Debug.Log("Every 1h and 3 times"), ScheduleMode.LongTerm, 3, 3600f);
+
+```
+
+Otherwise, the `Scheduler.defaultScheduleMode` will be used, which has an initial value `ScheduleMode.Dynamic`. You can change the default schedule mode by modifying this property. 
+
 And shortcut methods for thread synchronization context:
 
 ```c#
@@ -51,6 +70,10 @@ Package url: `https://github.com/aillieo/UnitySingleton.git#upm`
 [EasyEvent](https://github.com/aillieo/EasyEvent)
 
 Package url: `https://github.com/aillieo/EasyEvent.git#upm`
+
+[CSCollections](https://github.com/aillieo/CSCollections)
+
+Package url: `https://github.com/aillieo/CSCollections.git#upm`
 
 ## Usage
 
