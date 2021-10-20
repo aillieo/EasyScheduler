@@ -6,6 +6,7 @@ using System.Threading;
 using UnityEngine.Assertions;
 using AillieoUtils.Collections;
 using System.Text;
+using System.Linq;
 
 namespace AillieoUtils
 {
@@ -22,13 +23,16 @@ namespace AillieoUtils
         // dynamic
         private readonly LinkedList<ScheduledTaskDynamic> managedDynamicTasks = new LinkedList<ScheduledTaskDynamic>();
         private readonly LinkedList<ScheduledTaskDynamic> managedDynamicTasksUnscaled = new LinkedList<ScheduledTaskDynamic>();
-        private readonly List<ScheduledTaskDynamic> tasksToProcess = new List<ScheduledTaskDynamic>();
+        private readonly List<ScheduledTaskDynamic> tasksToProcessDynamic = new List<ScheduledTaskDynamic>();
         // static
         private readonly List<ScheduledTaskStatic> managedStaticTasks = new List<ScheduledTaskStatic>();
         private readonly List<ScheduledTaskStatic> managedStaticTasksUnscaled = new List<ScheduledTaskStatic>();
+        private readonly List<ScheduledTaskStatic> tasksToProcessStatic = new List<ScheduledTaskStatic>();
         // long term
         private readonly PriorityQueue<ScheduledTaskLongTerm> managedLongTermTasks = new PriorityQueue<ScheduledTaskLongTerm>();
         private readonly PriorityQueue<ScheduledTaskLongTerm> managedLongTermTasksUnscaled = new PriorityQueue<ScheduledTaskLongTerm>();
+        private float topTimer;
+        private float topTimerUnscaled;
 
         private readonly SynchronizationContext synchronizationContext;
 
@@ -73,8 +77,14 @@ namespace AillieoUtils
                 Debug.LogError(e);
             }
 
-            ProcessTimingTasks(managedDynamicTasks, Time.deltaTime);
-            ProcessTimingTasks(managedDynamicTasksUnscaled, Time.unscaledDeltaTime);
+            ProcessTimingTasksLongTerm(managedLongTermTasks, ref topTimer, Time.deltaTime);
+            ProcessTimingTasksLongTerm(managedLongTermTasksUnscaled, ref topTimerUnscaled, Time.unscaledDeltaTime);
+
+            ProcessTimingTasksStatic(managedStaticTasks, Time.deltaTime);
+            ProcessTimingTasksStatic(managedStaticTasksUnscaled, Time.unscaledDeltaTime);
+
+            ProcessTimingTasksDynamic(managedDynamicTasks, Time.deltaTime);
+            ProcessTimingTasksDynamic(managedDynamicTasksUnscaled, Time.unscaledDeltaTime);
         }
 
         public static Handle ScheduleLateUpdate(Action action)
@@ -328,11 +338,11 @@ namespace AillieoUtils
 
             if (useUnscaledTime)
             {
-                Instance.managedLongTermTasksUnscaled.Enqueue(task);
+                EnqueueLongTermTask(task, Instance.managedLongTermTasksUnscaled, ref Instance.topTimerUnscaled);
             }
             else
             {
-                Instance.managedLongTermTasks.Enqueue(task);
+                EnqueueLongTermTask(task, Instance.managedLongTermTasks, ref Instance.topTimer);
             }
 
             return task;
@@ -359,22 +369,45 @@ namespace AillieoUtils
                 return false;
             }
 
-            if (task.handle == null)
+            if (task.handle == null || task.removed)
             {
                 return false;
             }
             task.handle.List.Remove(task.handle);
             task.handle = null;
+            task.removed = true;
             return true;
         }
 
         public static bool Unschedule(ScheduledTaskStatic task)
         {
+            if (task == null)
+            {
+                return false;
+            }
+
+            if (task.removed)
+            {
+                return false;
+            }
+
+            task.removed = true;
             return true;
         }
 
         public static bool Unschedule(ScheduledTaskLongTerm task)
         {
+            if (task == null)
+            {
+                return false;
+            }
+
+            if (task.removed)
+            {
+                return false;
+            }
+
+            task.removed = true;
             return true;
         }
 
@@ -394,10 +427,10 @@ namespace AillieoUtils
             }
         }
 
-        private void ProcessTimingTasks(LinkedList<ScheduledTaskDynamic> tasks, float delta)
+        private void ProcessTimingTasksDynamic(LinkedList<ScheduledTaskDynamic> tasks, float delta)
         {
-            tasksToProcess.AddRange(tasks);
-            foreach (var task in tasksToProcess)
+            tasksToProcessDynamic.AddRange(tasks);
+            foreach (var task in tasksToProcessDynamic)
             {
                 task.timer += delta * task.speedRate;
                 while(task.timer > task.interval)
@@ -419,13 +452,127 @@ namespace AillieoUtils
                         {
                             tasks.Remove(task.handle);
                             task.handle = null;
+                            task.removed = true;
                             task.isDone = true;
                             break;
                         }
                     }
                 }
             }
-            tasksToProcess.Clear();
+            tasksToProcessDynamic.Clear();
+        }
+
+        private void ProcessTimingTasksStatic(List<ScheduledTaskStatic> tasks, float delta)
+        {
+            bool hasAnyToRemove = false;
+            tasksToProcessStatic.AddRange(tasks);
+            foreach (var task in tasksToProcessStatic)
+            {
+                if (task.removed)
+                {
+                    // from Unschedule()
+                    hasAnyToRemove = true;
+                    continue;
+                }
+
+                task.timer += delta * task.speedRate;
+                while (task.timer > task.interval)
+                {
+                    task.timer -= task.interval;
+                    try
+                    {
+                        task.action.Invoke();
+                    }
+                    catch (Exception e)
+                    {
+                        Debug.LogError(e);
+                    }
+
+                    if (task.times > 0)
+                    {
+                        task.times--;
+                        if (task.times == 0)
+                        {
+                            task.removed = true;
+                            hasAnyToRemove = true;
+                            task.isDone = true;
+                            break;
+                        }
+                    }
+                }
+            }
+            tasksToProcessStatic.Clear();
+            if (hasAnyToRemove)
+            {
+                tasks.RemoveAll(tsk => tsk.removed);
+                hasAnyToRemove = false;
+            }
+        }
+
+        private void ProcessTimingTasksLongTerm(PriorityQueue<ScheduledTaskLongTerm> tasks, ref float topTimerRef, float delta)
+        {
+            if (tasks.Count == 0)
+            {
+                return;
+            }
+
+            topTimerRef += delta;
+
+            while (tasks.Count > 0 && topTimerRef > tasks.Peek().timer)
+            {
+                ScheduledTaskLongTerm task = tasks.Dequeue();
+
+                if (task.removed)
+                {
+                    continue;
+                }
+
+                try
+                {
+                    task.action.Invoke();
+                }
+                catch (Exception e)
+                {
+                    Debug.LogError(e);
+                }
+
+                if (task.times > 0)
+                {
+                    task.times--;
+                    if (task.times == 0)
+                    {
+                        task.removed = true;
+                        task.isDone = true;
+                    }
+                }
+
+                if (!task.removed)
+                {
+                    task.timer -= task.interval;
+                    EnqueueLongTermTask(task, tasks, ref topTimerRef);
+                }
+            }
+
+            if (tasks.Count == 0)
+            {
+                topTimerRef = 0;
+            }
+        }
+
+        private static void EnqueueLongTermTask(ScheduledTaskLongTerm task, PriorityQueue<ScheduledTaskLongTerm> tasks, ref float topTimerRef)
+        {
+            if (topTimerRef > 0)
+            {
+                foreach (var t in tasks)
+                {
+                    t.timer += topTimerRef;
+                }
+
+                topTimerRef = 0;
+            }
+
+            topTimerRef = task.interval - task.timer;
+            tasks.Enqueue(task);
         }
 
         public static Coroutine StartUnityCoroutine(IEnumerator routine)

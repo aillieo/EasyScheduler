@@ -9,8 +9,9 @@ namespace AillieoUtils
         internal int times;
         internal Action action;
         internal float interval;
-        public float speedRate { get; set; } = 1;
+        internal float timer;
         public bool isDone { get; internal set; } = false;
+        public bool removed { get; internal set; } = false;
         public bool Unschedule()
         {
             return Scheduler.Unschedule(this);
@@ -19,7 +20,7 @@ namespace AillieoUtils
 
     public class ScheduledTaskDynamic : ScheduledTask
     {
-        internal float timer;
+        public float speedRate { get; set; } = 1;
         internal LinkedListNode<ScheduledTaskDynamic> handle;
 
         internal ScheduledTaskDynamic()
@@ -29,19 +30,22 @@ namespace AillieoUtils
 
     public class ScheduledTaskStatic : ScheduledTask
     {
-        internal float timer;
+        public float speedRate { get; set; } = 1;
 
         internal ScheduledTaskStatic()
         {
         }
     }
 
-    public class ScheduledTaskLongTerm : ScheduledTask
+    public class ScheduledTaskLongTerm : ScheduledTask, IComparable<ScheduledTaskLongTerm>
     {
-        internal double timer;
-
         internal ScheduledTaskLongTerm()
         {
+        }
+
+        public int CompareTo(ScheduledTaskLongTerm other)
+        {
+            return (interval - timer).CompareTo(other.interval - other.timer);
         }
     }
 }
