@@ -3,20 +3,7 @@
     "com.aillieo.collections": "https://github.com/aillieo/CSCollections.git#upm",
     "com.aillieo.easy-events": "https://github.com/aillieo/EasyEvent.git#upm",
     "com.aillieo.unity-singleton": "https://github.com/aillieo/UnitySingleton.git#upm",
-    "com.unity.test-framework": "1.1.13"
-  },
-  "lock": {
-    "com.aillieo.easy-events": {
-      "revision": "upm",
-      "hash": "49748580241f34c9b605f26998bd31118845e0e7"
-    },
-    "com.aillieo.unity-singleton": {
-      "revision": "upm",
-      "hash": "72acce70f260dfd549ca237d9141465a1910ac0a"
-    },
-    "com.aillieo.collections": {
-      "revision": "upm",
-      "hash": "5ddf49bcc72ac3e5d291c75be88af0e17b7d49c9"
-    }
+    "com.unity.ide.rider": "1.1.4",
+    "com.unity.test-framework": "1.1.18"
   }
 }

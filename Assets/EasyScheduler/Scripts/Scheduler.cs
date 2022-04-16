@@ -1,20 +1,22 @@
 using System;
-using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using System.Threading;
 using UnityEngine.Assertions;
 using AillieoUtils.Collections;
 using System.Text;
-using System.Linq;
 
 namespace AillieoUtils
 {
     [DefaultExecutionOrder(-100)]
-    public class Scheduler : SingletonMonoBehaviour<Scheduler>
+    public partial class Scheduler : SingletonMonoBehaviour<Scheduler>
     {
         public static ScheduleMode defaultScheduleMode = ScheduleMode.Dynamic;
+        public float globalTimeScale = 1.0f;
+
         // events
+        private int updatePhase = 0;
+        private readonly Event earlyUpdate = new Event();
         private readonly Event update = new Event();
         private readonly Event lateUpdate = new Event();
         private readonly Event fixedUpdate = new Event();
@@ -34,6 +36,13 @@ namespace AillieoUtils
         private float topTimer;
         private float topTimerUnscaled;
 
+        // dynamic
+        private readonly LinkedList<ScheduledFrameTaskDynamic> managedDynamicFrameTasks = new LinkedList<ScheduledFrameTaskDynamic>();
+        private readonly List<ScheduledFrameTaskDynamic> frameTasksToProcessDynamic = new List<ScheduledFrameTaskDynamic>();
+        // static
+        private readonly List<ScheduledFrameTaskStatic> managedStaticFrameTasks = new List<ScheduledFrameTaskStatic>();
+        private readonly List<ScheduledFrameTaskStatic> frameTasksToProcessStatic = new List<ScheduledFrameTaskStatic>();
+
         private readonly SynchronizationContext synchronizationContext;
 
         public Scheduler()
@@ -49,62 +58,55 @@ namespace AillieoUtils
             CreateInstance();
         }
 
-        public static Handle ScheduleUpdate(Action action)
-        {
-            return Instance.update.AddListener(action);
-        }
-
-        public static bool UnscheduleUpdate(Handle handle)
-        {
-            return Instance.update.Remove(handle);
-        }
-
-        public static int UnscheduleUpdate(Action action)
-        {
-            return Instance.update.RemoveListener(action);
-        }
-
         private void Update()
         {
             ProcessDelayTasks();
 
+            // early update phase
+            updatePhase = 1;
+
             try
             {
-                update.SafeInvoke();
+                earlyUpdate.SafeInvoke();
             }
             catch(Exception e)
             {
                 Debug.LogError(e);
             }
 
-            ProcessTimingTasksLongTerm(managedLongTermTasks, ref topTimer, Time.deltaTime);
-            ProcessTimingTasksLongTerm(managedLongTermTasksUnscaled, ref topTimerUnscaled, Time.unscaledDeltaTime);
+            // update phase
+            updatePhase = 2;
 
-            ProcessTimingTasksStatic(managedStaticTasks, Time.deltaTime);
-            ProcessTimingTasksStatic(managedStaticTasksUnscaled, Time.unscaledDeltaTime);
+            try
+            {
+                update.SafeInvoke();
+            }
+            catch (Exception e)
+            {
+                Debug.LogError(e);
+            }
 
-            ProcessTimingTasksDynamic(managedDynamicTasks, Time.deltaTime);
-            ProcessTimingTasksDynamic(managedDynamicTasksUnscaled, Time.unscaledDeltaTime);
-        }
+            float deltaTime = Time.deltaTime;
+            float unscaledDeltaTime = Time.unscaledDeltaTime;
 
-        public static Handle ScheduleLateUpdate(Action action)
-        {
-            return Instance.lateUpdate.AddListener(action);
-        }
+            ProcessTimingTasksLongTerm(managedLongTermTasks, ref topTimer, deltaTime);
+            ProcessTimingTasksLongTerm(managedLongTermTasksUnscaled, ref topTimerUnscaled, unscaledDeltaTime);
 
-        public static bool UnscheduleLateUpdate(Handle handle)
-        {
-            return Instance.lateUpdate.Remove(handle);
-        }
+            ProcessTimingTasksStatic(managedStaticTasks, deltaTime);
+            ProcessTimingTasksStatic(managedStaticTasksUnscaled, unscaledDeltaTime);
 
-        public static int UnscheduleLateUpdate(Action action)
-        {
-            return Instance.lateUpdate.RemoveListener(action);
+            ProcessTimingTasksDynamic(managedDynamicTasks, deltaTime);
+            ProcessTimingTasksDynamic(managedDynamicTasksUnscaled, unscaledDeltaTime);
+
+            ProcessFrameTasksStatic();
+            ProcessFrameTasksDynamic();
         }
 
         private void LateUpdate()
         {
             ProcessDelayTasks();
+
+            updatePhase = 3;
 
             try
             {
@@ -114,21 +116,6 @@ namespace AillieoUtils
             {
                 Debug.LogError(e);
             }
-        }
-
-        public static Handle ScheduleFixedUpdate(Action action)
-        {
-            return Instance.fixedUpdate.AddListener(action);
-        }
-
-        public static bool UnscheduleFixedUpdate(Handle handle)
-        {
-            return Instance.fixedUpdate.Remove(handle);
-        }
-
-        public static int UnscheduleFixedUpdate(Action action)
-        {
-            return Instance.fixedUpdate.RemoveListener(action);
         }
 
         private void FixedUpdate()
@@ -141,274 +128,6 @@ namespace AillieoUtils
             {
                 Debug.LogError(e);
             }
-        }
-
-        public static void Delay(Action action)
-        {
-            Instance.delayTasks.Enqueue(action);
-        }
-
-        public static void Post(Action action)
-        {
-            Instance.synchronizationContext.Post(_ => action(), null);
-        }
-
-        public static void Post(SendOrPostCallback callback, object arg)
-        {
-            Instance.synchronizationContext.Post(callback, arg);
-        }
-
-        public static void Send(Action action)
-        {
-            Instance.synchronizationContext.Send(_ => action(), null);
-        }
-
-        public static void Send(SendOrPostCallback callback, object arg)
-        {
-            Instance.synchronizationContext.Send(callback, arg);
-        }
-
-        public static ScheduledTask ScheduleOnce(Action action, float delay)
-        {
-            return CreateTask(action, defaultScheduleMode, 1, 0, delay, false);
-        }
-
-        public static ScheduledTask ScheduleOnce(Action action, ScheduleMode mode, float delay)
-        {
-            return CreateTask(action, mode, 1, 0, delay, false);
-        }
-
-        public static ScheduledTask ScheduleWithDelay(Action action, float interval, float delay)
-        {
-            return CreateTask(action, defaultScheduleMode, -1, interval, delay, false);
-        }
-
-        public static ScheduledTask ScheduleWithDelay(Action action, ScheduleMode mode, float interval, float delay)
-        {
-            return CreateTask(action, mode, -1, interval, delay, false);
-        }
-
-        public static ScheduledTask Schedule(Action action, float interval)
-        {
-            return CreateTask(action, defaultScheduleMode, -1, interval, 0, false);
-        }
-
-        public static ScheduledTask Schedule(Action action, ScheduleMode mode, float interval)
-        {
-            return CreateTask(action, mode, -1, interval, 0, false);
-        }
-
-        public static ScheduledTask ScheduleWithDelay(Action action, int times, float interval, float delay)
-        {
-            return CreateTask(action, defaultScheduleMode, times, interval, delay, false);
-        }
-
-        public static ScheduledTask ScheduleWithDelay(Action action, ScheduleMode mode, int times, float interval, float delay)
-        {
-            return CreateTask(action, mode, times, interval, delay, false);
-        }
-
-        public static ScheduledTask Schedule(Action action, int times ,float interval)
-        {
-            return CreateTask(action, defaultScheduleMode, times, interval, 0, false);
-        }
-
-        public static ScheduledTask Schedule(Action action, ScheduleMode mode, int times, float interval)
-        {
-            return CreateTask(action, mode, times, interval, 0, false);
-        }
-
-        public static ScheduledTask ScheduleOnceUnscaled(Action action, float delay)
-        {
-            return CreateTask(action, defaultScheduleMode, 1, 0, delay, true);
-        }
-
-        public static ScheduledTask ScheduleOnceUnscaled(Action action, ScheduleMode mode, float delay)
-        {
-            return CreateTask(action, mode, 1, 0, delay, true);
-        }
-
-        public static ScheduledTask ScheduleWithDelayUnscaled(Action action, float interval, float delay)
-        {
-            return CreateTask(action, defaultScheduleMode, -1, interval, delay, true);
-        }
-
-        public static ScheduledTask ScheduleWithDelayUnscaled(Action action, ScheduleMode mode, float interval, float delay)
-        {
-            return CreateTask(action, mode, -1, interval, delay, true);
-        }
-
-        public static ScheduledTask ScheduleUnscaled(Action action, float interval)
-        {
-            return CreateTask(action, defaultScheduleMode, -1, interval, 0, true);
-        }
-
-        public static ScheduledTask ScheduleUnscaled(Action action, ScheduleMode mode, float interval)
-        {
-            return CreateTask(action, mode, -1, interval, 0, true);
-        }
-
-        public static ScheduledTask ScheduleWithDelayUnscaled(Action action, int times, float interval, float delay)
-        {
-            return CreateTask(action, defaultScheduleMode, times, interval, delay, true);
-        }
-
-        public static ScheduledTask ScheduleWithDelayUnscaled(Action action, ScheduleMode mode, int times, float interval, float delay)
-        {
-            return CreateTask(action, mode, times, interval, delay, true);
-        }
-
-        public static ScheduledTask ScheduleUnscaled(Action action, int times, float interval)
-        {
-            return CreateTask(action, defaultScheduleMode, times, interval, 0, true);
-        }
-
-        public static ScheduledTask ScheduleUnscaled(Action action, ScheduleMode mode, int times, float interval)
-        {
-            return CreateTask(action, mode, times, interval, 0, true);
-        }
-
-        private static ScheduledTask CreateTask(Action action, ScheduleMode mode, int times, float interval, float delay, bool useUnscaledTime)
-        {
-            switch (mode)
-            {
-                case ScheduleMode.Dynamic:
-                    return CreateTaskDynamic(action, times, interval, delay, useUnscaledTime);
-                case ScheduleMode.Static:
-                    return CreateTaskStatic(action, times, interval, delay, useUnscaledTime);
-                case ScheduleMode.LongTerm:
-                    return CreateTaskLongTerm(action, times, interval, delay, useUnscaledTime);
-            }
-
-            return default;
-        }
-
-        private static ScheduledTaskDynamic CreateTaskDynamic(Action action, int times, float interval, float delay, bool useUnscaledTime)
-        {
-            ScheduledTaskDynamic task = new ScheduledTaskDynamic() {
-                action = action,
-                times = times,
-                interval = interval,
-                timer = - delay,
-            };
-
-            if(useUnscaledTime)
-            {
-                task.handle = Instance.managedDynamicTasksUnscaled.AddLast(task);
-            }
-            else
-            {
-                task.handle = Instance.managedDynamicTasks.AddLast(task);
-            }
-
-            return task;
-        }
-
-        private static ScheduledTaskStatic CreateTaskStatic(Action action, int times, float interval, float delay, bool useUnscaledTime)
-        {
-            ScheduledTaskStatic task = new ScheduledTaskStatic()
-            {
-                action = action,
-                times = times,
-                interval = interval,
-                timer = -delay,
-            };
-
-            if (useUnscaledTime)
-            {
-                Instance.managedStaticTasksUnscaled.Add(task);
-            }
-            else
-            {
-                Instance.managedStaticTasks.Add(task);
-            }
-
-            return task;
-        }
-
-        private static ScheduledTaskLongTerm CreateTaskLongTerm(Action action, int times, float interval, float delay, bool useUnscaledTime)
-        {
-            ScheduledTaskLongTerm task = new ScheduledTaskLongTerm()
-            {
-                action = action,
-                times = times,
-                interval = interval,
-                timer = -delay,
-            };
-
-            if (useUnscaledTime)
-            {
-                EnqueueLongTermTask(task, Instance.managedLongTermTasksUnscaled, ref Instance.topTimerUnscaled);
-            }
-            else
-            {
-                EnqueueLongTermTask(task, Instance.managedLongTermTasks, ref Instance.topTimer);
-            }
-
-            return task;
-        }
-
-        public static bool Unschedule(ScheduledTask task)
-        {
-            switch (task)
-            {
-                case ScheduledTaskDynamic taskDynamic:
-                    return Unschedule(taskDynamic);
-                case ScheduledTaskLongTerm taskLongTerm:
-                    return Unschedule(taskLongTerm);
-                case ScheduledTaskStatic taskStatic:
-                    return Unschedule(taskStatic);
-            }
-            return false;
-        }
-
-        public static bool Unschedule(ScheduledTaskDynamic task)
-        {
-            if(task == null)
-            {
-                return false;
-            }
-
-            if (task.handle == null || task.removed)
-            {
-                return false;
-            }
-            task.handle.List.Remove(task.handle);
-            task.handle = null;
-            task.removed = true;
-            return true;
-        }
-
-        public static bool Unschedule(ScheduledTaskStatic task)
-        {
-            if (task == null)
-            {
-                return false;
-            }
-
-            if (task.removed)
-            {
-                return false;
-            }
-
-            task.removed = true;
-            return true;
-        }
-
-        public static bool Unschedule(ScheduledTaskLongTerm task)
-        {
-            if (task == null)
-            {
-                return false;
-            }
-
-            if (task.removed)
-            {
-                return false;
-            }
-
-            task.removed = true;
-            return true;
         }
 
         private void ProcessDelayTasks()
@@ -575,19 +294,86 @@ namespace AillieoUtils
             tasks.Enqueue(task);
         }
 
-        public static Coroutine StartUnityCoroutine(IEnumerator routine)
+        private void ProcessFrameTasksDynamic()
         {
-            return Instance.StartCoroutine(routine);
+            frameTasksToProcessDynamic.AddRange(managedDynamicFrameTasks);
+            foreach (var task in frameTasksToProcessDynamic)
+            {
+                task.counter ++;
+                while (task.counter >= task.frameInterval)
+                {
+                    task.counter --;
+                    try
+                    {
+                        task.action.Invoke();
+                    }
+                    catch (Exception e)
+                    {
+                        Debug.LogError(e);
+                    }
+
+                    if (task.times > 0)
+                    {
+                        task.times--;
+                        if (task.times == 0)
+                        {
+                            managedDynamicFrameTasks.Remove(task.handle);
+                            task.handle = null;
+                            task.removed = true;
+                            task.isDone = true;
+                            break;
+                        }
+                    }
+                }
+            }
+            frameTasksToProcessDynamic.Clear();
         }
 
-        public static void StopUnityCoroutine(Coroutine routine)
+        private void ProcessFrameTasksStatic()
         {
-            Instance.StopCoroutine(routine);
-        }
-        
-        public static void StopAllUnityCoroutines()
-        {
-            Instance.StopAllCoroutines();
+            bool hasAnyToRemove = false;
+            frameTasksToProcessStatic.AddRange(managedStaticFrameTasks);
+            foreach (var task in frameTasksToProcessStatic)
+            {
+                if (task.removed)
+                {
+                    // from Unschedule()
+                    hasAnyToRemove = true;
+                    continue;
+                }
+
+                task.counter ++;
+                while (task.counter >= task.frameInterval)
+                {
+                    task.counter --;
+                    try
+                    {
+                        task.action.Invoke();
+                    }
+                    catch (Exception e)
+                    {
+                        Debug.LogError(e);
+                    }
+
+                    if (task.times > 0)
+                    {
+                        task.times--;
+                        if (task.times == 0)
+                        {
+                            task.removed = true;
+                            hasAnyToRemove = true;
+                            task.isDone = true;
+                            break;
+                        }
+                    }
+                }
+            }
+            frameTasksToProcessStatic.Clear();
+            if (hasAnyToRemove)
+            {
+                managedStaticFrameTasks.RemoveAll(tsk => tsk.removed);
+                hasAnyToRemove = false;
+            }
         }
 
         public static string GetRunningInfo()
