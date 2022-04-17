@@ -16,12 +16,22 @@ namespace AillieoUtils
             return CreateFrameTask(action, ScheduleMode.Dynamic, 1, 1, 0);
         }
 
+        public static ScheduledFrameTask ScheduleByFrame(Action action, ScheduleMode mode, int frameInterval)
+        {
+            return CreateFrameTask(action, mode, -1, frameInterval, 0);
+        }
+
         public static ScheduledFrameTask ScheduleByFrame(Action action, ScheduleMode mode, int times, int frameInterval)
         {
             return CreateFrameTask(action, mode, times, frameInterval, 0);
         }
 
-        public static ScheduledFrameTask ScheduleByFrame(Action action, ScheduleMode mode, int times, int frameInterval, int initialPhase)
+        public static ScheduledFrameTask ScheduleByFrameWithInitialPhase(Action action, ScheduleMode mode, int frameInterval, int initialPhase)
+        {
+            return CreateFrameTask(action, mode, -1, frameInterval, initialPhase);
+        }
+
+        public static ScheduledFrameTask ScheduleByFrameWithInitialPhase(Action action, ScheduleMode mode, int times, int frameInterval, int initialPhase)
         {
             return CreateFrameTask(action, mode, times, frameInterval, initialPhase);
         }
@@ -35,6 +45,7 @@ namespace AillieoUtils
                 case ScheduledFrameTaskStatic taskStatic:
                     return Unschedule(taskStatic);
             }
+
             return false;
         }
 

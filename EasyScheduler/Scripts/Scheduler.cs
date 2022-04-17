@@ -23,16 +23,16 @@ namespace AillieoUtils
         // delay
         private readonly Queue<Action> delayTasks = new Queue<Action>();
         // dynamic
-        private readonly LinkedList<ScheduledTaskDynamic> managedDynamicTasks = new LinkedList<ScheduledTaskDynamic>();
-        private readonly LinkedList<ScheduledTaskDynamic> managedDynamicTasksUnscaled = new LinkedList<ScheduledTaskDynamic>();
-        private readonly List<ScheduledTaskDynamic> tasksToProcessDynamic = new List<ScheduledTaskDynamic>();
+        private readonly LinkedList<ScheduledTimingTaskDynamic> managedDynamicTasks = new LinkedList<ScheduledTimingTaskDynamic>();
+        private readonly LinkedList<ScheduledTimingTaskDynamic> managedDynamicTasksUnscaled = new LinkedList<ScheduledTimingTaskDynamic>();
+        private readonly List<ScheduledTimingTaskDynamic> tasksToProcessDynamic = new List<ScheduledTimingTaskDynamic>();
         // static
-        private readonly List<ScheduledTaskStatic> managedStaticTasks = new List<ScheduledTaskStatic>();
-        private readonly List<ScheduledTaskStatic> managedStaticTasksUnscaled = new List<ScheduledTaskStatic>();
-        private readonly List<ScheduledTaskStatic> tasksToProcessStatic = new List<ScheduledTaskStatic>();
+        private readonly List<ScheduledTimingTaskStatic> managedStaticTasks = new List<ScheduledTimingTaskStatic>();
+        private readonly List<ScheduledTimingTaskStatic> managedStaticTasksUnscaled = new List<ScheduledTimingTaskStatic>();
+        private readonly List<ScheduledTimingTaskStatic> tasksToProcessStatic = new List<ScheduledTimingTaskStatic>();
         // long term
-        private readonly PriorityQueue<ScheduledTaskLongTerm> managedLongTermTasks = new PriorityQueue<ScheduledTaskLongTerm>();
-        private readonly PriorityQueue<ScheduledTaskLongTerm> managedLongTermTasksUnscaled = new PriorityQueue<ScheduledTaskLongTerm>();
+        private readonly PriorityQueue<ScheduledTimingTaskLongTerm> managedLongTermTasks = new PriorityQueue<ScheduledTimingTaskLongTerm>();
+        private readonly PriorityQueue<ScheduledTimingTaskLongTerm> managedLongTermTasksUnscaled = new PriorityQueue<ScheduledTimingTaskLongTerm>();
         private float topTimer;
         private float topTimerUnscaled;
 
@@ -89,6 +89,11 @@ namespace AillieoUtils
             float deltaTime = Time.deltaTime;
             float unscaledDeltaTime = Time.unscaledDeltaTime;
 
+            if (globalTimeScale != 1f)
+            {
+                deltaTime *= globalTimeScale;
+            }
+
             ProcessTimingTasksLongTerm(managedLongTermTasks, ref topTimer, deltaTime);
             ProcessTimingTasksLongTerm(managedLongTermTasksUnscaled, ref topTimerUnscaled, unscaledDeltaTime);
 
@@ -135,7 +140,7 @@ namespace AillieoUtils
             while (delayTasks.Count > 0)
             {
                 Action action = delayTasks.Dequeue();
-                try 
+                try
                 {
                     action.Invoke();
                 }
@@ -146,16 +151,16 @@ namespace AillieoUtils
             }
         }
 
-        private void ProcessTimingTasksDynamic(LinkedList<ScheduledTaskDynamic> tasks, float delta)
+        private void ProcessTimingTasksDynamic(LinkedList<ScheduledTimingTaskDynamic> tasks, float delta)
         {
             tasksToProcessDynamic.AddRange(tasks);
             foreach (var task in tasksToProcessDynamic)
             {
-                task.timer += delta * task.speedRate;
+                task.timer += delta * task.localTimeScale;
                 while(task.timer > task.interval)
                 {
                     task.timer -= task.interval;
-                    try 
+                    try
                     {
                         task.action.Invoke();
                     }
@@ -181,7 +186,7 @@ namespace AillieoUtils
             tasksToProcessDynamic.Clear();
         }
 
-        private void ProcessTimingTasksStatic(List<ScheduledTaskStatic> tasks, float delta)
+        private void ProcessTimingTasksStatic(List<ScheduledTimingTaskStatic> tasks, float delta)
         {
             bool hasAnyToRemove = false;
             tasksToProcessStatic.AddRange(tasks);
@@ -194,7 +199,7 @@ namespace AillieoUtils
                     continue;
                 }
 
-                task.timer += delta * task.speedRate;
+                task.timer += delta * task.localTimeScale;
                 while (task.timer > task.interval)
                 {
                     task.timer -= task.interval;
@@ -228,7 +233,7 @@ namespace AillieoUtils
             }
         }
 
-        private void ProcessTimingTasksLongTerm(PriorityQueue<ScheduledTaskLongTerm> tasks, ref float topTimerRef, float delta)
+        private void ProcessTimingTasksLongTerm(PriorityQueue<ScheduledTimingTaskLongTerm> tasks, ref float topTimerRef, float delta)
         {
             if (tasks.Count == 0)
             {
@@ -239,7 +244,7 @@ namespace AillieoUtils
 
             while (tasks.Count > 0 && topTimerRef > tasks.Peek().timer)
             {
-                ScheduledTaskLongTerm task = tasks.Dequeue();
+                ScheduledTimingTaskLongTerm task = tasks.Dequeue();
 
                 if (task.removed)
                 {
@@ -278,7 +283,7 @@ namespace AillieoUtils
             }
         }
 
-        private static void EnqueueLongTermTask(ScheduledTaskLongTerm task, PriorityQueue<ScheduledTaskLongTerm> tasks, ref float topTimerRef)
+        private static void EnqueueLongTermTask(ScheduledTimingTaskLongTerm task, PriorityQueue<ScheduledTimingTaskLongTerm> tasks, ref float topTimerRef)
         {
             if (topTimerRef > 0)
             {
