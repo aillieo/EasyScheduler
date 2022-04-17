@@ -12,10 +12,6 @@ namespace AillieoUtils
         internal int counter;
         public bool isDone { get; internal set; } = false;
         public bool removed { get; internal set; } = false;
-        public bool Unschedule()
-        {
-            return Scheduler.Unschedule(this);
-        }
     }
 
     public class ScheduledFrameTaskDynamic : ScheduledFrameTask
