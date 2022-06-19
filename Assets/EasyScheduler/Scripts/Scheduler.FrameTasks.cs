@@ -4,7 +4,7 @@ using UnityEngine;
 
 namespace AillieoUtils
 {
-    public partial class Scheduler
+    public static partial class Scheduler
     {
         public static ScheduledFrameTask ScheduleAfterFrames(Action action, int frames)
         {
@@ -107,7 +107,7 @@ namespace AillieoUtils
                 counter = initialPhase,
             };
 
-            task.handle = Instance.managedDynamicFrameTasks.AddLast(task);
+            task.handle = SchedulerImpl.Instance.managedDynamicFrameTasks.AddLast(task);
 
             return task;
         }
@@ -122,7 +122,7 @@ namespace AillieoUtils
                 counter = initialPhase,
             };
 
-            Instance.managedStaticFrameTasks.Add(task);
+            SchedulerImpl.Instance.managedStaticFrameTasks.Add(task);
 
             return task;
         }
