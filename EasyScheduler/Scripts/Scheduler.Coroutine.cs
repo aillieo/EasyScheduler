@@ -3,21 +3,21 @@ using UnityEngine;
 
 namespace AillieoUtils
 {
-    public partial class Scheduler
+    public static partial class Scheduler
     {
         public static Coroutine StartUnityCoroutine(IEnumerator routine)
         {
-            return Instance.StartCoroutine(routine);
+            return SchedulerImpl.Instance.StartCoroutine(routine);
         }
 
         public static void StopUnityCoroutine(Coroutine routine)
         {
-            Instance.StopCoroutine(routine);
+            SchedulerImpl.Instance.StopCoroutine(routine);
         }
 
         public static void StopAllUnityCoroutines()
         {
-            Instance.StopAllCoroutines();
+            SchedulerImpl.Instance.StopAllCoroutines();
         }
     }
 }

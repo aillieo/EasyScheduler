@@ -6,7 +6,7 @@ using UnityEditor;
 
 namespace AillieoUtils
 {
-    [CustomEditor(typeof(Scheduler))]
+    [CustomEditor(typeof(SchedulerImpl))]
     public class SchedulerEditor : Editor
     {
         public override void OnInspectorGUI()
@@ -20,6 +20,19 @@ namespace AillieoUtils
             if (GUILayout.Button("Reset"))
             {
                 Time.timeScale = 1;
+            }
+
+            EditorGUILayout.EndHorizontal();
+
+            EditorGUILayout.LabelField("Scheduler Time Scale:");
+            EditorGUILayout.BeginHorizontal();
+            float globalTimeScale = Scheduler.GlobalTimeScale;
+            globalTimeScale = EditorGUILayout.Slider(globalTimeScale, 0, 16);
+            Scheduler.GlobalTimeScale = globalTimeScale;
+
+            if (GUILayout.Button("Reset"))
+            {
+                Scheduler.GlobalTimeScale = 1;
             }
 
             EditorGUILayout.EndHorizontal();
