@@ -1,6 +1,5 @@
 {
   "dependencies": {
-    "com.aillieo.collections": "https://github.com/aillieo/CSCollections.git#upm",
     "com.aillieo.easy-events": "https://github.com/aillieo/EasyEvent.git#upm",
     "com.aillieo.unity-singleton": "https://github.com/aillieo/UnitySingleton.git#upm",
     "com.unity.ide.rider": "1.1.4",

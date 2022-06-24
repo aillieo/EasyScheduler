@@ -1,12 +1,5 @@
 {
   "dependencies": {
-    "com.aillieo.collections": {
-      "version": "https://github.com/aillieo/CSCollections.git#upm",
-      "depth": 0,
-      "source": "git",
-      "dependencies": {},
-      "hash": "5ddf49bcc72ac3e5d291c75be88af0e17b7d49c9"
-    },
     "com.aillieo.easy-events": {
       "version": "https://github.com/aillieo/EasyEvent.git#upm",
       "depth": 0,
