@@ -3,8 +3,8 @@ using System.Collections.Generic;
 using UnityEngine;
 using System.Threading;
 using UnityEngine.Assertions;
-using AillieoUtils.Collections;
 using UnityEngine.LowLevel;
+using System.Linq;
 
 namespace AillieoUtils
 {
@@ -26,10 +26,13 @@ namespace AillieoUtils
 
         // events
         internal int updatePhase = 0;
+        internal readonly Event earlyUpdate = new Event();
+        internal readonly Event fixedUpdate = new Event();
         internal readonly Event preUpdate = new Event();
         internal readonly Event update = new Event();
+        internal readonly Event preLateUpdate = new Event();
         internal readonly Event lateUpdate = new Event();
-        internal readonly Event fixedUpdate = new Event();
+        internal readonly Event postLateUpdate = new Event();
         // delay
         internal readonly Queue<Action> delayTasks = new Queue<Action>();
         // dynamic
@@ -40,11 +43,6 @@ namespace AillieoUtils
         internal readonly List<ScheduledTimingTaskStatic> managedStaticTasks = new List<ScheduledTimingTaskStatic>();
         internal readonly List<ScheduledTimingTaskStatic> managedStaticTasksUnscaled = new List<ScheduledTimingTaskStatic>();
         internal readonly List<ScheduledTimingTaskStatic> tasksToProcessStatic = new List<ScheduledTimingTaskStatic>();
-        // long term
-        internal readonly PriorityQueue<ScheduledTimingTaskLongTerm> managedLongTermTasks = new PriorityQueue<ScheduledTimingTaskLongTerm>();
-        internal readonly PriorityQueue<ScheduledTimingTaskLongTerm> managedLongTermTasksUnscaled = new PriorityQueue<ScheduledTimingTaskLongTerm>();
-        internal float topTimer;
-        internal float topTimerUnscaled;
 
         // dynamic
         internal readonly LinkedList<ScheduledFrameTaskDynamic> managedDynamicFrameTasks = new LinkedList<ScheduledFrameTaskDynamic>();
@@ -72,62 +70,52 @@ namespace AillieoUtils
         {
             base.Awake();
 
-            PlayerLoopSystem defaultPlayerLoop = PlayerLoop.GetCurrentPlayerLoop();
-            for (int i = 0; i < defaultPlayerLoop.subSystemList.Length; ++i)
+            if (this == Instance)
             {
-                if (defaultPlayerLoop.subSystemList[i].type != typeof(UnityEngine.PlayerLoop.PreUpdate))
-                {
-                    continue;
-                }
-
-                // preUpdate
-                PlayerLoopSystem preUpdateSystem = defaultPlayerLoop.subSystemList[i];
-                List<PlayerLoopSystem> subSystemList = new List<PlayerLoopSystem>(preUpdateSystem.subSystemList);
-
-                PlayerLoopSystem newPlayerLoopSystem = new PlayerLoopSystem()
-                {
-                    type = typeof(SchedulerImpl),
-                    updateDelegate = PreUpdate,
-                };
-
-                subSystemList.Add(newPlayerLoopSystem);
-
-                preUpdateSystem.subSystemList = subSystemList.ToArray();
-                defaultPlayerLoop.subSystemList[i] = preUpdateSystem;
-                PlayerLoop.SetPlayerLoop(defaultPlayerLoop);
-                break;
+                PlayerLoopRegDef.RegisterPlayerLoops(this);
             }
         }
 
         protected override void OnDestroy()
         {
-            PlayerLoopSystem defaultPlayerLoop = PlayerLoop.GetCurrentPlayerLoop();
-            for (int i = 0; i < defaultPlayerLoop.subSystemList.Length; ++i)
+            if (this == Instance)
             {
-                if (defaultPlayerLoop.subSystemList[i].type != typeof(UnityEngine.PlayerLoop.PreUpdate))
-                {
-                    continue;
-                }
-
-                // preUpdate
-                PlayerLoopSystem preUpdateSystem = defaultPlayerLoop.subSystemList[i];
-                List<PlayerLoopSystem> subSystemList = new List<PlayerLoopSystem>(preUpdateSystem.subSystemList);
-
-                int removed = subSystemList.RemoveAll(pls => pls.type == typeof(SchedulerImpl));
-                if (removed > 0)
-                {
-                    preUpdateSystem.subSystemList = subSystemList.ToArray();
-                    defaultPlayerLoop.subSystemList[i] = preUpdateSystem;
-                    PlayerLoop.SetPlayerLoop(defaultPlayerLoop);
-                }
-
-                break;
+                PlayerLoopRegDef.UnregisterPlayerLoops(this);
             }
 
             base.OnDestroy();
         }
 
-        private void PreUpdate()
+        internal void PlayerLoopEarlyUpdate()
+        {
+            // early update phase
+            updatePhase = 1;
+
+            try
+            {
+                earlyUpdate.SafeInvoke();
+            }
+            catch (Exception e)
+            {
+                Debug.LogError(e);
+            }
+
+            updatePhase = 0;
+        }
+
+        internal void PlayerLoopFixedUpdate()
+        {
+            try
+            {
+                fixedUpdate.SafeInvoke();
+            }
+            catch (Exception e)
+            {
+                Debug.LogError(e);
+            }
+        }
+
+        internal void PlayerLoopPreUpdate()
         {
             // pre update phase
             updatePhase = 1;
@@ -146,7 +134,7 @@ namespace AillieoUtils
             ProcessDelayTasks();
         }
 
-        private void Update()
+        internal void PlayerLoopUpdate()
         {
             // update phase
             updatePhase = 2;
@@ -172,9 +160,6 @@ namespace AillieoUtils
                 deltaTime *= globalTimeScale;
             }
 
-            ProcessTimingTasksLongTerm(managedLongTermTasks, ref topTimer, deltaTime);
-            ProcessTimingTasksLongTerm(managedLongTermTasksUnscaled, ref topTimerUnscaled, unscaledDeltaTime);
-
             ProcessTimingTasksStatic(managedStaticTasks, deltaTime);
             ProcessTimingTasksStatic(managedStaticTasksUnscaled, unscaledDeltaTime);
 
@@ -185,7 +170,23 @@ namespace AillieoUtils
             ProcessFrameTasksDynamic();
         }
 
-        private void LateUpdate()
+        internal void PlayerLoopPreLateUpdate()
+        {
+            updatePhase = 3;
+
+            try
+            {
+                preLateUpdate.SafeInvoke();
+            }
+            catch (Exception e)
+            {
+                Debug.LogError(e);
+            }
+
+            updatePhase = 0;
+        }
+
+        internal void PlayerLoopLateUpdate()
         {
             updatePhase = 3;
 
@@ -203,16 +204,20 @@ namespace AillieoUtils
             ProcessDelayTasks();
         }
 
-        private void FixedUpdate()
+        internal void PlayerLoopPostLateUpdate()
         {
+            updatePhase = 3;
+
             try
             {
-                fixedUpdate.SafeInvoke();
+                postLateUpdate.SafeInvoke();
             }
             catch (Exception e)
             {
                 Debug.LogError(e);
             }
+
+            updatePhase = 0;
         }
 
         private void ProcessDelayTasks()
@@ -237,14 +242,14 @@ namespace AillieoUtils
             foreach (var task in tasksToProcessDynamic)
             {
                 task.timer += delta * task.localTimeScale;
-                while(task.timer > task.interval)
+                while (task.timer > task.interval)
                 {
                     task.timer -= task.interval;
                     try
                     {
                         task.action.Invoke();
                     }
-                    catch(Exception e)
+                    catch (Exception e)
                     {
                         Debug.LogError(e);
                     }
@@ -252,7 +257,7 @@ namespace AillieoUtils
                     if (task.times > 0)
                     {
                         task.times--;
-                        if(task.times == 0)
+                        if (task.times == 0)
                         {
                             tasks.Remove(task.handle);
                             task.handle = null;
@@ -313,81 +318,15 @@ namespace AillieoUtils
             }
         }
 
-        private void ProcessTimingTasksLongTerm(PriorityQueue<ScheduledTimingTaskLongTerm> tasks, ref float topTimerRef, float delta)
-        {
-            if (tasks.Count == 0)
-            {
-                return;
-            }
-
-            topTimerRef += delta;
-
-            while (tasks.Count > 0 && topTimerRef > tasks.Peek().timer)
-            {
-                ScheduledTimingTaskLongTerm task = tasks.Dequeue();
-
-                if (task.removed)
-                {
-                    continue;
-                }
-
-                try
-                {
-                    task.action.Invoke();
-                }
-                catch (Exception e)
-                {
-                    Debug.LogError(e);
-                }
-
-                if (task.times > 0)
-                {
-                    task.times--;
-                    if (task.times == 0)
-                    {
-                        task.removed = true;
-                        task.isDone = true;
-                    }
-                }
-
-                if (!task.removed)
-                {
-                    task.timer -= task.interval;
-                    EnqueueLongTermTask(task, tasks, ref topTimerRef);
-                }
-            }
-
-            if (tasks.Count == 0)
-            {
-                topTimerRef = 0;
-            }
-        }
-
-        internal static void EnqueueLongTermTask(ScheduledTimingTaskLongTerm task, PriorityQueue<ScheduledTimingTaskLongTerm> tasks, ref float topTimerRef)
-        {
-            if (topTimerRef > 0)
-            {
-                foreach (var t in tasks)
-                {
-                    t.timer += topTimerRef;
-                }
-
-                topTimerRef = 0;
-            }
-
-            topTimerRef = task.interval - task.timer;
-            tasks.Enqueue(task);
-        }
-
         private void ProcessFrameTasksDynamic()
         {
             frameTasksToProcessDynamic.AddRange(managedDynamicFrameTasks);
             foreach (var task in frameTasksToProcessDynamic)
             {
-                task.counter ++;
+                task.counter++;
                 while (task.counter >= task.frameInterval)
                 {
-                    task.counter --;
+                    task.counter--;
                     try
                     {
                         task.action.Invoke();
@@ -427,10 +366,10 @@ namespace AillieoUtils
                     continue;
                 }
 
-                task.counter ++;
+                task.counter++;
                 while (task.counter >= task.frameInterval)
                 {
-                    task.counter --;
+                    task.counter--;
                     try
                     {
                         task.action.Invoke();

@@ -4,6 +4,12 @@ namespace AillieoUtils
 {
     public static partial class Scheduler
     {
+        public enum ScheduleMode
+        {
+            Dynamic = 0,
+            Static,
+        }
+
         public static bool HasInstance => SchedulerImpl.HasInstance;
 
         public static float GlobalTimeScale
@@ -16,6 +22,8 @@ namespace AillieoUtils
         {
             get => SchedulerImpl.Instance.updatePhase;
         }
+
+        public static ScheduleMode defaultScheduleMode = ScheduleMode.Dynamic;
 
         public static string GetRunningInfo()
         {
@@ -34,7 +42,6 @@ namespace AillieoUtils
             stringBuilder.AppendLine("Running Tasks:");
             stringBuilder.AppendLine($"  Dynamic : {ins.managedDynamicTasks.Count} + {ins.managedDynamicTasksUnscaled.Count}");
             stringBuilder.AppendLine($"  Static : {ins.managedStaticTasks.Count} + {ins.managedStaticTasksUnscaled.Count}");
-            stringBuilder.AppendLine($"  Long term : {ins.managedLongTermTasks.Count} + {ins.managedLongTermTasksUnscaled.Count}");
 
             stringBuilder.AppendLine("Running Frame Tasks:");
             stringBuilder.AppendLine($"  Dynamic : {ins.managedDynamicFrameTasks.Count}");
