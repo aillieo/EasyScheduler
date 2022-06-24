@@ -90,11 +90,9 @@ namespace AillieoUtils
                     return CreateFrameTaskDynamic(action, times, frameInterval, initialPhase);
                 case ScheduleMode.Static:
                     return CreateFrameTaskStatic(action, times, frameInterval, initialPhase);
-                case ScheduleMode.LongTerm:
-                    throw new NotSupportedException();
             }
 
-            return default;
+            throw new NotSupportedException();
         }
 
         private static ScheduledFrameTaskDynamic CreateFrameTaskDynamic(Action action, int times, int frameInterval, int initialPhase)

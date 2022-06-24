@@ -11,7 +11,7 @@ namespace AillieoUtils
 
         public static ScheduledTimingTask ScheduleWithDelay(Action action, float interval, float delay)
         {
-            return CreateTask(action, GetDefaultScheduleMode(-1, interval), -1, interval, delay, false);
+            return CreateTask(action, defaultScheduleMode, -1, interval, delay, false);
         }
 
         public static ScheduledTimingTask ScheduleWithDelay(Action action, ScheduleMode mode, float interval, float delay)
@@ -21,7 +21,7 @@ namespace AillieoUtils
 
         public static ScheduledTimingTask Schedule(Action action, float interval)
         {
-            return CreateTask(action, GetDefaultScheduleMode(-1, interval), -1, interval, 0, false);
+            return CreateTask(action, defaultScheduleMode, -1, interval, 0, false);
         }
 
         public static ScheduledTimingTask Schedule(Action action, ScheduleMode mode, float interval)
@@ -31,7 +31,7 @@ namespace AillieoUtils
 
         public static ScheduledTimingTask ScheduleWithDelay(Action action, int times, float interval, float delay)
         {
-            return CreateTask(action, GetDefaultScheduleMode(times, interval), times, interval, delay, false);
+            return CreateTask(action, defaultScheduleMode, times, interval, delay, false);
         }
 
         public static ScheduledTimingTask ScheduleWithDelay(Action action, ScheduleMode mode, int times, float interval, float delay)
@@ -41,7 +41,7 @@ namespace AillieoUtils
 
         public static ScheduledTimingTask Schedule(Action action, int times, float interval)
         {
-            return CreateTask(action, GetDefaultScheduleMode(times, interval), times, interval, 0, false);
+            return CreateTask(action, defaultScheduleMode, times, interval, 0, false);
         }
 
         public static ScheduledTimingTask Schedule(Action action, ScheduleMode mode, int times, float interval)
@@ -61,7 +61,7 @@ namespace AillieoUtils
 
         public static ScheduledTimingTask ScheduleWithDelayUnscaled(Action action, float interval, float delay)
         {
-            return CreateTask(action, GetDefaultScheduleMode(-1, interval), -1, interval, delay, true);
+            return CreateTask(action, defaultScheduleMode, -1, interval, delay, true);
         }
 
         public static ScheduledTimingTask ScheduleWithDelayUnscaled(Action action, ScheduleMode mode, float interval, float delay)
@@ -71,7 +71,7 @@ namespace AillieoUtils
 
         public static ScheduledTimingTask ScheduleUnscaled(Action action, float interval)
         {
-            return CreateTask(action, GetDefaultScheduleMode(-1, interval), -1, interval, 0, true);
+            return CreateTask(action, defaultScheduleMode, -1, interval, 0, true);
         }
 
         public static ScheduledTimingTask ScheduleUnscaled(Action action, ScheduleMode mode, float interval)
@@ -81,7 +81,7 @@ namespace AillieoUtils
 
         public static ScheduledTimingTask ScheduleWithDelayUnscaled(Action action, int times, float interval, float delay)
         {
-            return CreateTask(action, GetDefaultScheduleMode(times, interval), times, interval, delay, true);
+            return CreateTask(action, defaultScheduleMode, times, interval, delay, true);
         }
 
         public static ScheduledTimingTask ScheduleWithDelayUnscaled(Action action, ScheduleMode mode, int times, float interval, float delay)
@@ -91,7 +91,7 @@ namespace AillieoUtils
 
         public static ScheduledTimingTask ScheduleUnscaled(Action action, int times, float interval)
         {
-            return CreateTask(action, GetDefaultScheduleMode(times, interval), times, interval, 0, true);
+            return CreateTask(action, defaultScheduleMode, times, interval, 0, true);
         }
 
         public static ScheduledTimingTask ScheduleUnscaled(Action action, ScheduleMode mode, int times, float interval)
@@ -105,12 +105,11 @@ namespace AillieoUtils
             {
                 case ScheduledTimingTaskDynamic taskDynamic:
                     return Unschedule(taskDynamic);
-                case ScheduledTimingTaskLongTerm taskLongTerm:
-                    return Unschedule(taskLongTerm);
                 case ScheduledTimingTaskStatic taskStatic:
                     return Unschedule(taskStatic);
             }
-            return false;
+
+            throw new NotSupportedException();
         }
 
         public static bool Unschedule(ScheduledTimingTaskDynamic task)
@@ -146,22 +145,6 @@ namespace AillieoUtils
             return true;
         }
 
-        public static bool Unschedule(ScheduledTimingTaskLongTerm task)
-        {
-            if (task == null)
-            {
-                return false;
-            }
-
-            if (task.removed)
-            {
-                return false;
-            }
-
-            task.removed = true;
-            return true;
-        }
-
         private static ScheduledTimingTask CreateTask(Action action, ScheduleMode mode, int times, float interval, float delay, bool useUnscaledTime)
         {
             switch (mode)
@@ -170,11 +153,9 @@ namespace AillieoUtils
                     return CreateTaskDynamic(action, times, interval, delay, useUnscaledTime);
                 case ScheduleMode.Static:
                     return CreateTaskStatic(action, times, interval, delay, useUnscaledTime);
-                case ScheduleMode.LongTerm:
-                    return CreateTaskLongTerm(action, times, interval, delay, useUnscaledTime);
             }
 
-            return default;
+            throw new NotSupportedException();
         }
 
         private static ScheduledTimingTaskDynamic CreateTaskDynamic(Action action, int times, float interval, float delay, bool useUnscaledTime)
@@ -219,38 +200,6 @@ namespace AillieoUtils
             }
 
             return task;
-        }
-
-        private static ScheduledTimingTaskLongTerm CreateTaskLongTerm(Action action, int times, float interval, float delay, bool useUnscaledTime)
-        {
-            ScheduledTimingTaskLongTerm task = new ScheduledTimingTaskLongTerm()
-            {
-                action = action,
-                times = times,
-                interval = interval,
-                timer = -delay,
-            };
-
-            if (useUnscaledTime)
-            {
-                SchedulerImpl.EnqueueLongTermTask(task, SchedulerImpl.Instance.managedLongTermTasksUnscaled, ref SchedulerImpl.Instance.topTimerUnscaled);
-            }
-            else
-            {
-                SchedulerImpl.EnqueueLongTermTask(task, SchedulerImpl.Instance.managedLongTermTasks, ref SchedulerImpl.Instance.topTimer);
-            }
-
-            return task;
-        }
-
-        private static ScheduleMode GetDefaultScheduleMode(int times, float interval)
-        {
-            if (interval > 60)
-            {
-                return ScheduleMode.LongTerm;
-            }
-
-            return ScheduleMode.Dynamic;
         }
     }
 }

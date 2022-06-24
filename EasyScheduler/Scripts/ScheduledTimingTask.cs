@@ -35,21 +35,4 @@ namespace AillieoUtils
         {
         }
     }
-
-    public class ScheduledTimingTaskLongTerm : ScheduledTimingTask, IComparable<ScheduledTimingTaskLongTerm>
-    {
-        internal ScheduledTimingTaskLongTerm()
-        {
-        }
-
-        public override float localTimeScale
-        {
-            set => throw new NotSupportedException();
-        }
-
-        public int CompareTo(ScheduledTimingTaskLongTerm other)
-        {
-            return (interval - timer).CompareTo(other.interval - other.timer);
-        }
-    }
 }
