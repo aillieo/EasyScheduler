@@ -1,30 +1,68 @@
-using System.Text;
+// -----------------------------------------------------------------------
+// <copyright file="Scheduler.cs" company="AillieoTech">
+// Copyright (c) AillieoTech. All rights reserved.
+// </copyright>
+// -----------------------------------------------------------------------
 
 namespace AillieoUtils
 {
+    /// <summary>
+    /// Scheduler contains various method including:
+    /// 1. Schedule a task by a fixed time interval;
+    /// 2. Schedule a task by a fixed frame interval;
+    /// 3. Register and unregister callbacks to Unity player loop update events;
+    /// 4. Send or post callbacks to Unity main thread;
+    /// 5. Start and stop a Unity coroutine.
+    /// </summary>
     public static partial class Scheduler
     {
+        /// <summary>
+        /// Default schedule mode when no explicit mode argument provided.
+        /// </summary>
+        public static ScheduleMode defaultScheduleMode = ScheduleMode.Dynamic;
+
+        /// <summary>
+        /// Mode to schedule a task.
+        /// </summary>
         public enum ScheduleMode
         {
+            /// <summary>
+            /// Dynamic mode: for short life tasks and intended to be created/deleted frequently.
+            /// </summary>
             Dynamic = 0,
+
+            /// <summary>
+            /// Static mode: for tasks that exist long lifespans and are not created/deleted frequently.
+            /// </summary>
             Static,
         }
 
+        /// <summary>
+        /// Gets a value indicating whether the SchedulerImpl instance exists.
+        /// </summary>
         public static bool HasInstance => SchedulerImpl.HasInstance;
 
+        /// <summary>
+        /// Gets or sets the global time scale for <see cref="Scheduler"/>.
+        /// </summary>
         public static float GlobalTimeScale
         {
             get => SchedulerImpl.Instance.globalTimeScale;
             set => SchedulerImpl.Instance.globalTimeScale = value;
         }
 
+        /// <summary>
+        /// Gets the current update phase.
+        /// </summary>
         public static int UpdatePhase
         {
             get => SchedulerImpl.Instance.updatePhase;
         }
 
-        public static ScheduleMode defaultScheduleMode = ScheduleMode.Dynamic;
-
+        /// <summary>
+        /// Get current running info for debug purpose.
+        /// </summary>
+        /// <returns>Running info in Json format.</returns>
         public static string GetRunningInfo()
         {
             if (!SchedulerImpl.HasInstance)
@@ -33,27 +71,30 @@ namespace AillieoUtils
             }
 
             SchedulerImpl ins = SchedulerImpl.Instance;
-            StringBuilder stringBuilder = new StringBuilder();
 
-            stringBuilder.AppendLine("Scheduler:");
-            stringBuilder.AppendLine($"  GlobalTimeScale : {ins.globalTimeScale}");
-            stringBuilder.AppendLine($"  UpdatePhase : {ins.updatePhase}");
+            return $"{{ " +
 
-            stringBuilder.AppendLine("Running Tasks:");
-            stringBuilder.AppendLine($"  Dynamic : {ins.managedDynamicTasks.Count} + {ins.managedDynamicTasksUnscaled.Count}");
-            stringBuilder.AppendLine($"  Static : {ins.managedStaticTasks.Count} + {ins.managedStaticTasksUnscaled.Count}");
+                $"\"GlobalTimeScale\" :{ins.globalTimeScale}, " +
+                $"\"UpdatePhase\" : {ins.updatePhase}," +
 
-            stringBuilder.AppendLine("Running Frame Tasks:");
-            stringBuilder.AppendLine($"  Dynamic : {ins.managedDynamicFrameTasks.Count}");
-            stringBuilder.AppendLine($"  Static : {ins.managedStaticFrameTasks.Count}");
+                $"\"Dynamic Timing Tasks\" :{ins.managedDynamicTasks.Count}," +
+                $"\"Dynamic Timing Tasks Unscaled\" :{ins.managedDynamicTasksUnscaled.Count}," +
 
-            stringBuilder.AppendLine("Running Updates:");
-            stringBuilder.AppendLine($"  PreUpdate : {ins.preUpdate.ListenerCount}");
-            stringBuilder.AppendLine($"  FixedUpdate : {ins.fixedUpdate.ListenerCount}");
-            stringBuilder.AppendLine($"  Update : {ins.update.ListenerCount}");
-            stringBuilder.AppendLine($"  LateUpdate : {ins.lateUpdate.ListenerCount}");
+                $"\"Static Timing Tasks\" :{ins.managedStaticTasks.Count}," +
+                $"\"Static Timing Tasks Unscaled\" :{ins.managedStaticTasksUnscaled.Count}," +
 
-            return stringBuilder.ToString();
+                $"\"Dynamic Frame Tasks\" :{ins.managedDynamicFrameTasks.Count}," +
+                $"\"Static Frame Tasks\" :{ins.managedStaticFrameTasks.Count}," +
+
+                $"\"EarlyUpdate\" :{ins.earlyUpdate.ListenerCount}," +
+                $"\"PreUpdate\" :{ins.preUpdate.ListenerCount}," +
+                $"\"FixedUpdate\" :{ins.fixedUpdate.ListenerCount}," +
+                $"\"Update\" :{ins.update.ListenerCount}," +
+                $"\"PreLateUpdate\" :{ins.preLateUpdate.ListenerCount}," +
+                $"\"LateUpdate\" :{ins.lateUpdate.ListenerCount}," +
+                $"\"PostLateUpdate\" :{ins.postLateUpdate.ListenerCount}" +
+
+                $" }}";
         }
     }
 }

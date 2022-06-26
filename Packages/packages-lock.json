@@ -5,14 +5,14 @@
       "depth": 0,
       "source": "git",
       "dependencies": {},
-      "hash": "f26b36147dbba04d2fd03c83b36c93d7a4525730"
+      "hash": "f21171ce58a1e8a949fe3e63e5501afff730ec79"
     },
     "com.aillieo.unity-singleton": {
       "version": "https://github.com/aillieo/UnitySingleton.git#upm",
       "depth": 0,
       "source": "git",
       "dependencies": {},
-      "hash": "d992922e329738b25e644bdf16c956db0de07016"
+      "hash": "0775f3dcc788c42defd5769c6d6a968b9223c3a2"
     },
     "com.unity.ext.nunit": {
       "version": "1.0.0",

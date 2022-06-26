@@ -1,68 +1,23 @@
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using UnityEngine.Assertions;
-using UnityEngine.LowLevel;
+// -----------------------------------------------------------------------
+// <copyright file="PlayerLoopRegDef.cs" company="AillieoTech">
+// Copyright (c) AillieoTech. All rights reserved.
+// </copyright>
+// -----------------------------------------------------------------------
 
 namespace AillieoUtils
 {
+    using System;
+    using System.Collections.Generic;
+    using System.Linq;
+    using UnityEngine.Assertions;
+    using UnityEngine.LowLevel;
+
     internal class PlayerLoopRegDef
     {
         public Type targetType;
         public Type targetSubType;
         public Type regAsType;
         public Func<SchedulerImpl, PlayerLoopSystem.UpdateFunction> updateDelProvider;
-
-        private PlayerLoopRegDef(Type targetType, Type targetSubType, Type regAsType, Func<SchedulerImpl, PlayerLoopSystem.UpdateFunction> updateDelProvider)
-        {
-            this.targetType = targetType;
-            this.targetSubType = targetSubType;
-            this.regAsType = regAsType;
-            this.updateDelProvider = updateDelProvider;
-        }
-
-        internal static void RegisterPlayerLoops(SchedulerImpl schedulerImplInstance)
-        {
-            Assert.AreEqual(SchedulerImpl.Instance, schedulerImplInstance);
-            PlayerLoopSystem currentPlayerLoop = PlayerLoop.GetCurrentPlayerLoop();
-            bool changed = false;
-
-            foreach (var playerLoopRegDef in playerLoopRegisterDefs)
-            {
-                changed = RegisterPlayerLoop(schedulerImplInstance, ref currentPlayerLoop, playerLoopRegDef) || changed;
-            }
-
-            if (changed)
-            {
-                PlayerLoop.SetPlayerLoop(currentPlayerLoop);
-            }
-
-            UnityEngine.Debug.Log(
-                string.Join(
-                    "\n",
-                    PlayerLoop.GetCurrentPlayerLoop()
-                    .subSystemList
-                    .SelectMany(pls => pls.subSystemList)
-                    .Select(pls => pls.type)));
-        }
-
-        internal static void UnregisterPlayerLoops(SchedulerImpl schedulerImplInstance)
-        {
-            Assert.AreEqual(SchedulerImpl.Instance, schedulerImplInstance);
-
-            PlayerLoopSystem currentPlayerLoop = PlayerLoop.GetCurrentPlayerLoop();
-            bool changed = false;
-
-            foreach (var playerLoopRegDef in playerLoopRegisterDefs)
-            {
-                changed = UnregisterPlayerLoop(schedulerImplInstance, ref currentPlayerLoop, playerLoopRegDef) || changed;
-            }
-
-            if (changed)
-            {
-                PlayerLoop.SetPlayerLoop(currentPlayerLoop);
-            }
-        }
 
         private static readonly List<PlayerLoopRegDef> playerLoopRegisterDefs = new List<PlayerLoopRegDef>()
         {
@@ -103,23 +58,74 @@ namespace AillieoUtils
                 o => o.PlayerLoopPostLateUpdate),
         };
 
+        private PlayerLoopRegDef(Type targetType, Type targetSubType, Type regAsType, Func<SchedulerImpl, PlayerLoopSystem.UpdateFunction> updateDelProvider)
+        {
+            this.targetType = targetType;
+            this.targetSubType = targetSubType;
+            this.regAsType = regAsType;
+            this.updateDelProvider = updateDelProvider;
+        }
+
+        internal static void RegisterPlayerLoops(SchedulerImpl schedulerImplInstance)
+        {
+            Assert.AreEqual(SchedulerImpl.Instance, schedulerImplInstance);
+            PlayerLoopSystem currentPlayerLoop = PlayerLoop.GetCurrentPlayerLoop();
+            var changed = false;
+
+            foreach (var playerLoopRegDef in playerLoopRegisterDefs)
+            {
+                changed = RegisterPlayerLoop(schedulerImplInstance, ref currentPlayerLoop, playerLoopRegDef) || changed;
+            }
+
+            if (changed)
+            {
+                PlayerLoop.SetPlayerLoop(currentPlayerLoop);
+            }
+
+            UnityEngine.Debug.Log(
+                string.Join(
+                    "\n",
+                    PlayerLoop.GetCurrentPlayerLoop()
+                    .subSystemList
+                    .SelectMany(pls => pls.subSystemList)
+                    .Select(pls => pls.type)));
+        }
+
+        internal static void UnregisterPlayerLoops(SchedulerImpl schedulerImplInstance)
+        {
+            Assert.AreEqual(SchedulerImpl.Instance, schedulerImplInstance);
+
+            PlayerLoopSystem currentPlayerLoop = PlayerLoop.GetCurrentPlayerLoop();
+            var changed = false;
+
+            foreach (var playerLoopRegDef in playerLoopRegisterDefs)
+            {
+                changed = UnregisterPlayerLoop(ref currentPlayerLoop, playerLoopRegDef) || changed;
+            }
+
+            if (changed)
+            {
+                PlayerLoop.SetPlayerLoop(currentPlayerLoop);
+            }
+        }
+
         private static bool RegisterPlayerLoop(SchedulerImpl schedulerImplInstance, ref PlayerLoopSystem currentPlayerLoop, PlayerLoopRegDef playerLoopRegDef)
         {
-            for (int i = 0; i < currentPlayerLoop.subSystemList.Length; ++i)
+            for (var i = 0; i < currentPlayerLoop.subSystemList.Length; ++i)
             {
                 var loopEventType = currentPlayerLoop.subSystemList[i].type;
                 if (loopEventType == playerLoopRegDef.targetType)
                 {
                     PlayerLoopSystem system = currentPlayerLoop.subSystemList[i];
-                    List<PlayerLoopSystem> subSystemList = new List<PlayerLoopSystem>(system.subSystemList);
+                    var subSystemList = new List<PlayerLoopSystem>(system.subSystemList);
 
-                    PlayerLoopSystem newPlayerLoopSystem = new PlayerLoopSystem()
+                    var newPlayerLoopSystem = new PlayerLoopSystem()
                     {
                         type = playerLoopRegDef.regAsType,
                         updateDelegate = playerLoopRegDef.updateDelProvider(schedulerImplInstance),
                     };
 
-                    int index = 0;
+                    var index = 0;
                     if (playerLoopRegDef.targetSubType != null)
                     {
                         index = subSystemList.FindIndex(ss => ss.type == playerLoopRegDef.targetSubType);
@@ -137,17 +143,17 @@ namespace AillieoUtils
             return false;
         }
 
-        private static bool UnregisterPlayerLoop(SchedulerImpl schedulerImplInstance, ref PlayerLoopSystem currentPlayerLoop, PlayerLoopRegDef playerLoopRegDef)
+        private static bool UnregisterPlayerLoop(ref PlayerLoopSystem currentPlayerLoop, PlayerLoopRegDef playerLoopRegDef)
         {
-            for (int i = 0; i < currentPlayerLoop.subSystemList.Length; ++i)
+            for (var i = 0; i < currentPlayerLoop.subSystemList.Length; ++i)
             {
                 var loopEventType = currentPlayerLoop.subSystemList[i].type;
                 if (loopEventType == playerLoopRegDef.targetType)
                 {
                     PlayerLoopSystem system = currentPlayerLoop.subSystemList[i];
-                    List<PlayerLoopSystem> subSystemList = new List<PlayerLoopSystem>(system.subSystemList);
+                    var subSystemList = new List<PlayerLoopSystem>(system.subSystemList);
 
-                    int removed = subSystemList.RemoveAll(pls => pls.type == playerLoopRegDef.regAsType);
+                    var removed = subSystemList.RemoveAll(pls => pls.type == playerLoopRegDef.regAsType);
                     if (removed > 0)
                     {
                         system.subSystemList = subSystemList.ToArray();
