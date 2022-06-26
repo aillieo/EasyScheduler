@@ -1,19 +1,24 @@
+// -----------------------------------------------------------------------
+// <copyright file="SchedulerEditor.cs" company="AillieoTech">
+// Copyright (c) AillieoTech. All rights reserved.
+// </copyright>
+// -----------------------------------------------------------------------
+
 #if UNITY_EDITOR
-using System;
-using System.Collections.Generic;
-using UnityEngine;
-using UnityEditor;
 
 namespace AillieoUtils
 {
+    using UnityEditor;
+    using UnityEngine;
+
     [CustomEditor(typeof(SchedulerImpl))]
-    public class SchedulerEditor : Editor
+    internal class SchedulerEditor : Editor
     {
         public override void OnInspectorGUI()
         {
             EditorGUILayout.LabelField("Unity Time Scale:");
             EditorGUILayout.BeginHorizontal();
-            float timeScale = Time.timeScale;
+            var timeScale = Time.timeScale;
             timeScale = EditorGUILayout.Slider(timeScale, 0, 16);
             Time.timeScale = timeScale;
 
@@ -26,7 +31,7 @@ namespace AillieoUtils
 
             EditorGUILayout.LabelField("Scheduler Time Scale:");
             EditorGUILayout.BeginHorizontal();
-            float globalTimeScale = Scheduler.GlobalTimeScale;
+            var globalTimeScale = Scheduler.GlobalTimeScale;
             globalTimeScale = EditorGUILayout.Slider(globalTimeScale, 0, 16);
             Scheduler.GlobalTimeScale = globalTimeScale;
 
