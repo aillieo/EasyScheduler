@@ -9,8 +9,8 @@ using UnityEngine.TestTools;
 
 namespace AillieoUtils.Tests
 {
-    [Category("Scheduler")]
-    public class TestScheduler
+    [Category("TestMisc")]
+    public class TestMisc
     {
         [UnityTest]
         public IEnumerator TestPost()
@@ -90,98 +90,6 @@ namespace AillieoUtils.Tests
             });
 
             yield return new WaitWhile(() => rest > 0);
-        }
-
-        [UnityTest]
-        public IEnumerator TestScheduleOnce()
-        {
-            int rest = 1;
-
-            int n = 0;
-            Scheduler.ScheduleOnce(() => {
-                n++;
-                rest--;
-            }, 0.2f);
-
-            Scheduler.ScheduleOnce(() => {
-                Assert.AreEqual(n, 1);
-                Scheduler.ScheduleOnce(() => {
-                    Assert.AreEqual(n, 1);
-                    rest--;
-                }, 0.2f);
-            }, 0.2f);
-
-            yield return new WaitWhile(() => rest > 0);
-        }
-
-        [Test]
-        public void TestSchedule1()
-        {
-            int a0 = 0;
-            int a1 = 0;
-            Scheduler.Schedule(() => {
-                a0++;
-            }, 3, 0.1f);
-            Scheduler.Schedule(() => {
-                a1++;
-                if(a1 <= 3)
-                {
-                    Assert.AreEqual(a1, a0);
-                }
-                else
-                {
-                    Assert.AreNotEqual(a1, a0);
-                }
-            }, 10, 0.1f);
-        }
-
-        [Test]
-        public void TestSchedule2()
-        {
-            int a2 = 0;
-            int a3 = 0;
-            Scheduler.Schedule(() => {
-                a2++;
-            }, 10, 0.5f);
-            Scheduler.Schedule(() => {
-                a3++;
-            }, 20, 0.25f);
-            Scheduler.Schedule(() => {
-                Assert.AreEqual(a2 * 2, a3);
-            }, 6, 1);
-        }
-
-        [Test]
-        public void TestSchedule3()
-        {
-            int a4 = 0;
-            int a5 = 0;
-            Scheduler.Schedule(() => {
-                a4++;
-            }, 10, 0.4f);
-            var t = Scheduler.Schedule(() => {
-                a5++;
-            }, 20, 0.4f);
-            Scheduler.ScheduleOnce(() => {
-                Scheduler.Unschedule(t);
-            }, 4);
-
-            Scheduler.Schedule(() => {
-                Assert.AreEqual(a4, a5);
-            }, 20, 0.2f);
-        }
-
-        [Test]
-        public void TestWithExceptions()
-        {
-            Scheduler.Schedule(() =>
-            {
-                throw new System.Exception() { };
-            }, 0.1f);
-            Scheduler.ScheduleUpdate(() =>
-            {
-                throw new System.Exception() { };
-            });
         }
     }
 }
