@@ -7,6 +7,7 @@
 namespace AillieoUtils
 {
     using System;
+    using System.Collections.Generic;
     using System.Threading;
 
     /// <summary>
@@ -20,7 +21,8 @@ namespace AillieoUtils
         /// <param name="action">Callback to invoke.</param>
         public static void Delay(Action action)
         {
-            SchedulerImpl.Instance.delayTasks.Enqueue(action);
+            Queue<Action> delayTasks = SchedulerImpl.Instance.delayQueues[1];
+            delayTasks.Enqueue(action);
         }
 
         /// <summary>

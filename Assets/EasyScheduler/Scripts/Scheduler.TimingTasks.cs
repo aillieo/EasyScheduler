@@ -282,8 +282,6 @@ namespace AillieoUtils
                 return false;
             }
 
-            task.handle.List.Remove(task.handle);
-            task.handle = null;
             task.removed = true;
             return true;
         }

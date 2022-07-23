@@ -25,33 +25,41 @@ namespace AillieoUtils
         internal readonly Event postLateUpdate = new Event();
 
         // delay
-        internal readonly Queue<Action> delayTasks = new Queue<Action>();
+        internal readonly Queue<Action>[] delayQueues = new Queue<Action>[2] { new Queue<Action>(), new Queue<Action>() };
 
         // dynamic
         internal readonly LinkedList<ScheduledTimingTaskDynamic> managedDynamicTasks = new LinkedList<ScheduledTimingTaskDynamic>();
         internal readonly LinkedList<ScheduledTimingTaskDynamic> managedDynamicTasksUnscaled = new LinkedList<ScheduledTimingTaskDynamic>();
-        internal readonly List<ScheduledTimingTaskDynamic> tasksToProcessDynamic = new List<ScheduledTimingTaskDynamic>();
 
         // static
         internal readonly List<ScheduledTimingTaskStatic> managedStaticTasks = new List<ScheduledTimingTaskStatic>();
         internal readonly List<ScheduledTimingTaskStatic> managedStaticTasksUnscaled = new List<ScheduledTimingTaskStatic>();
-        internal readonly List<ScheduledTimingTaskStatic> tasksToProcessStatic = new List<ScheduledTimingTaskStatic>();
 
         // dynamic
         internal readonly LinkedList<ScheduledFrameTaskDynamic> managedDynamicFrameTasks = new LinkedList<ScheduledFrameTaskDynamic>();
-        internal readonly List<ScheduledFrameTaskDynamic> frameTasksToProcessDynamic = new List<ScheduledFrameTaskDynamic>();
 
         // static
         internal readonly List<ScheduledFrameTaskStatic> managedStaticFrameTasks = new List<ScheduledFrameTaskStatic>();
-        internal readonly List<ScheduledFrameTaskStatic> frameTasksToProcessStatic = new List<ScheduledFrameTaskStatic>();
 
         internal readonly SynchronizationContext synchronizationContext;
 
         internal float globalTimeScale = 1.0f;
         internal int updatePhase;
 
-        private static readonly Predicate<ScheduledTimingTaskStatic> removePredicateTiming = task => task.removed;
-        private static readonly Predicate<ScheduledFrameTaskStatic> removePredicateFrame = task => task.removed;
+        private static readonly Predicate<ScheduledTimingTask> removePredicateTiming = task => task.removed;
+        private static readonly Predicate<ScheduledFrameTask> removePredicateFrame = task => task.removed;
+
+        // process buffer dynamic
+        private readonly List<ScheduledTimingTaskDynamic> tasksToProcessDynamic = new List<ScheduledTimingTaskDynamic>();
+
+        // process buffer static
+        private readonly List<ScheduledTimingTaskStatic> tasksToProcessStatic = new List<ScheduledTimingTaskStatic>();
+
+        // process buffer dynamic frame
+        private readonly List<ScheduledFrameTaskDynamic> frameTasksToProcessDynamic = new List<ScheduledFrameTaskDynamic>();
+
+        // process buffer static frame
+        private readonly List<ScheduledFrameTaskStatic> frameTasksToProcessStatic = new List<ScheduledFrameTaskStatic>();
 
         private SchedulerImpl()
         {
@@ -144,10 +152,7 @@ namespace AillieoUtils
             var deltaTime = Time.deltaTime;
             var unscaledDeltaTime = Time.unscaledDeltaTime;
 
-            if (this.globalTimeScale != 1f)
-            {
-                deltaTime *= this.globalTimeScale;
-            }
+            deltaTime *= this.globalTimeScale;
 
             this.ProcessTimingTasksStatic(this.managedStaticTasks, deltaTime);
             this.ProcessTimingTasksStatic(this.managedStaticTasksUnscaled, unscaledDeltaTime);
@@ -237,9 +242,14 @@ namespace AillieoUtils
 
         private void ProcessDelayTasks()
         {
-            while (this.delayTasks.Count > 0)
+            Queue<Action> toProcess = this.delayQueues[1];
+            Queue<Action> backBuffer = this.delayQueues[0];
+            this.delayQueues[0] = toProcess;
+            this.delayQueues[1] = backBuffer;
+
+            while (toProcess.Count > 0)
             {
-                Action action = this.delayTasks.Dequeue();
+                Action action = toProcess.Dequeue();
                 try
                 {
                     action.Invoke();
@@ -253,12 +263,20 @@ namespace AillieoUtils
 
         private void ProcessTimingTasksDynamic(LinkedList<ScheduledTimingTaskDynamic> tasks, float delta)
         {
+            var hasAnyToRemove = false;
             this.tasksToProcessDynamic.AddRange(tasks);
             foreach (var task in this.tasksToProcessDynamic)
             {
                 task.timer += delta * task.localTimeScale;
                 while (task.timer > task.interval)
                 {
+                    if (task.removed)
+                    {
+                        task.handle = null;
+                        hasAnyToRemove = true;
+                        break;
+                    }
+
                     task.timer -= task.interval;
                     try
                     {
@@ -274,10 +292,10 @@ namespace AillieoUtils
                         task.times--;
                         if (task.times == 0)
                         {
-                            tasks.Remove(task.handle);
-                            task.handle = null;
-                            task.removed = true;
                             task.isDone = true;
+                            task.removed = true;
+                            task.handle = null;
+                            hasAnyToRemove = true;
                             break;
                         }
                     }
@@ -285,6 +303,10 @@ namespace AillieoUtils
             }
 
             this.tasksToProcessDynamic.Clear();
+            if (hasAnyToRemove)
+            {
+                tasks.RemoveAll(removePredicateTiming);
+            }
         }
 
         private void ProcessTimingTasksStatic(List<ScheduledTimingTaskStatic> tasks, float delta)
@@ -293,16 +315,15 @@ namespace AillieoUtils
             this.tasksToProcessStatic.AddRange(tasks);
             foreach (var task in this.tasksToProcessStatic)
             {
-                if (task.removed)
-                {
-                    // from Unschedule()
-                    hasAnyToRemove = true;
-                    continue;
-                }
-
                 task.timer += delta * task.localTimeScale;
                 while (task.timer > task.interval)
                 {
+                    if (task.removed)
+                    {
+                        hasAnyToRemove = true;
+                        break;
+                    }
+
                     task.timer -= task.interval;
                     try
                     {
@@ -318,9 +339,9 @@ namespace AillieoUtils
                         task.times--;
                         if (task.times == 0)
                         {
+                            task.isDone = true;
                             task.removed = true;
                             hasAnyToRemove = true;
-                            task.isDone = true;
                             break;
                         }
                     }
@@ -336,11 +357,17 @@ namespace AillieoUtils
 
         private void ProcessFrameTasksDynamic()
         {
+            var hasAnyToRemove = false;
             this.frameTasksToProcessDynamic.AddRange(this.managedDynamicFrameTasks);
             foreach (var task in this.frameTasksToProcessDynamic)
             {
+                if (task.removed)
+                {
+                    continue;
+                }
+
                 task.counter++;
-                while (task.counter >= task.frameInterval)
+                if (task.counter >= task.frameInterval)
                 {
                     task.counter -= task.frameInterval;
                     try
@@ -357,17 +384,19 @@ namespace AillieoUtils
                         task.times--;
                         if (task.times == 0)
                         {
-                            this.managedDynamicFrameTasks.Remove(task.handle);
-                            task.handle = null;
-                            task.removed = true;
                             task.isDone = true;
-                            break;
+                            task.removed = true;
+                            hasAnyToRemove = true;
                         }
                     }
                 }
             }
 
             this.frameTasksToProcessDynamic.Clear();
+            if (hasAnyToRemove)
+            {
+                this.managedDynamicFrameTasks.RemoveAll(removePredicateFrame);
+            }
         }
 
         private void ProcessFrameTasksStatic()
@@ -378,13 +407,12 @@ namespace AillieoUtils
             {
                 if (task.removed)
                 {
-                    // from Unschedule()
                     hasAnyToRemove = true;
                     continue;
                 }
 
                 task.counter++;
-                while (task.counter >= task.frameInterval)
+                if (task.counter >= task.frameInterval)
                 {
                     task.counter -= task.frameInterval;
                     try
@@ -401,10 +429,9 @@ namespace AillieoUtils
                         task.times--;
                         if (task.times == 0)
                         {
+                            task.isDone = true;
                             task.removed = true;
                             hasAnyToRemove = true;
-                            task.isDone = true;
-                            break;
                         }
                     }
                 }
