@@ -77,7 +77,7 @@ namespace AillieoUtils.Tests
         }
 
         [UnityTest]
-        public IEnumerator TestDelay()
+        public IEnumerator TestDelay1()
         {
             int rest = 1;
 
@@ -87,6 +87,25 @@ namespace AillieoUtils.Tests
             Scheduler.Delay(() => {
                 Assert.AreEqual(n, 1);
                 rest--;
+            });
+
+            yield return new WaitWhile(() => rest > 0);
+        }
+
+        [UnityTest]
+        public IEnumerator TestDelay2()
+        {
+            int rest = 1;
+            Scheduler.Delay(() =>
+            {
+                int n = 0;
+                Scheduler.Delay(() => { n++; });
+                Assert.AreEqual(n, 0);
+                Scheduler.Delay(() =>
+                {
+                    Assert.AreEqual(n, 1);
+                    rest--;
+                });
             });
 
             yield return new WaitWhile(() => rest > 0);
