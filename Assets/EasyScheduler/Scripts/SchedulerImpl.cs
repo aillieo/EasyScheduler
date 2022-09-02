@@ -7,6 +7,7 @@
 namespace AillieoUtils
 {
     using System;
+    using System.Collections.Concurrent;
     using System.Collections.Generic;
     using System.Threading;
     using UnityEngine;
@@ -25,7 +26,7 @@ namespace AillieoUtils
         internal readonly Event postLateUpdate = new Event();
 
         // delay
-        internal readonly Queue<Action>[] delayQueues = new Queue<Action>[2] { new Queue<Action>(), new Queue<Action>() };
+        internal readonly Queue<Action>[] delayQueues = new Queue<Action>[] { new Queue<Action>(), new Queue<Action>() };
 
         // dynamic
         internal readonly LinkedList<ScheduledTimingTaskDynamic> managedDynamicTasks = new LinkedList<ScheduledTimingTaskDynamic>();
@@ -42,12 +43,17 @@ namespace AillieoUtils
         internal readonly List<ScheduledFrameTaskStatic> managedStaticFrameTasks = new List<ScheduledFrameTaskStatic>();
 
         internal readonly SynchronizationContext synchronizationContext;
+        internal readonly ConcurrentQueue<(Func<object>, CancellationToken)> threadedTasksQueue = new ConcurrentQueue<(Func<object>, CancellationToken)>();
+        internal int threadedTasksMaxConcurrency = 8;
+        internal int threadedTasksRunning = 0;
 
         internal float globalTimeScale = 1.0f;
         internal int updatePhase;
 
         private static readonly Predicate<ScheduledTimingTask> removePredicateTiming = task => task.removed;
         private static readonly Predicate<ScheduledFrameTask> removePredicateFrame = task => task.removed;
+
+        private static readonly string errorWithCreatingStack = "{0}\n......Registered: \n{1}";
 
         // process buffer dynamic
         private readonly List<ScheduledTimingTaskDynamic> tasksToProcessDynamic = new List<ScheduledTimingTaskDynamic>();
@@ -66,17 +72,6 @@ namespace AillieoUtils
             // typeof(UnitySynchronizationContext)
             this.synchronizationContext = SynchronizationContext.Current;
             Assert.IsNotNull(this.synchronizationContext);
-        }
-
-        public static float GlobalTimeScale
-        {
-            get => Instance.globalTimeScale;
-            set => Instance.globalTimeScale = value;
-        }
-
-        public static int UpdatePhase
-        {
-            get => Instance.updatePhase;
         }
 
         internal void PlayerLoopEarlyUpdate()
@@ -284,7 +279,11 @@ namespace AillieoUtils
                     }
                     catch (Exception e)
                     {
+#if DEVELOPMENT_BUILD || UNITY_EDITOR
+                        Debug.LogErrorFormat(errorWithCreatingStack, e, task.creatingStackTrace);
+#else
                         Debug.LogError(e);
+#endif
                     }
 
                     if (task.times > 0)
@@ -331,7 +330,11 @@ namespace AillieoUtils
                     }
                     catch (Exception e)
                     {
+#if DEVELOPMENT_BUILD || UNITY_EDITOR
+                        Debug.LogErrorFormat(errorWithCreatingStack, e, task.creatingStackTrace);
+#else
                         Debug.LogError(e);
+#endif
                     }
 
                     if (task.times > 0)
@@ -376,7 +379,11 @@ namespace AillieoUtils
                     }
                     catch (Exception e)
                     {
+#if DEVELOPMENT_BUILD || UNITY_EDITOR
+                        Debug.LogErrorFormat(errorWithCreatingStack, e, task.creatingStackTrace);
+#else
                         Debug.LogError(e);
+#endif
                     }
 
                     if (task.times > 0)
@@ -421,7 +428,11 @@ namespace AillieoUtils
                     }
                     catch (Exception e)
                     {
+#if DEVELOPMENT_BUILD || UNITY_EDITOR
+                        Debug.LogErrorFormat(errorWithCreatingStack, e, task.creatingStackTrace);
+#else
                         Debug.LogError(e);
+#endif
                     }
 
                     if (task.times > 0)
