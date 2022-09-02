@@ -8,6 +8,7 @@ namespace AillieoUtils
 {
     using System;
     using System.Collections.Generic;
+    using System.Diagnostics;
 
     /// <summary>
     /// Task scheduled by time.
@@ -18,6 +19,15 @@ namespace AillieoUtils
         internal Action action;
         internal float interval;
         internal float timer;
+
+#if DEVELOPMENT_BUILD || UNITY_EDITOR
+        internal StackTrace creatingStackTrace;
+
+        internal ScheduledTimingTask()
+        {
+            this.creatingStackTrace = new StackTrace(5, true);
+        }
+#endif
 
         /// <summary>
         /// Gets or sets the local time scale for the task.

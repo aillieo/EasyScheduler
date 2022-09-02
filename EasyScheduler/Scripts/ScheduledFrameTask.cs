@@ -8,6 +8,7 @@ namespace AillieoUtils
 {
     using System;
     using System.Collections.Generic;
+    using System.Diagnostics;
 
     /// <summary>
     /// Task scheduled by frame.
@@ -18,6 +19,15 @@ namespace AillieoUtils
         internal Action action;
         internal ushort frameInterval;
         internal int counter;
+
+#if DEVELOPMENT_BUILD || UNITY_EDITOR
+        internal StackTrace creatingStackTrace;
+
+        internal ScheduledFrameTask()
+        {
+            this.creatingStackTrace = new StackTrace(5, true);
+        }
+#endif
 
         /// <summary>
         /// Gets a value indicating whether this task is finished.

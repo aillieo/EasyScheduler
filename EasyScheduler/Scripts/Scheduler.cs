@@ -6,6 +6,8 @@
 
 namespace AillieoUtils
 {
+    using System.Threading;
+
     /// <summary>
     /// Scheduler contains various method including:
     /// 1. Schedule a task by a fixed time interval;
@@ -57,6 +59,28 @@ namespace AillieoUtils
         public static int UpdatePhase
         {
             get => SchedulerImpl.Instance.updatePhase;
+        }
+
+        /// <summary>
+        /// Gets or sets max concurrency for threaded tasks.
+        /// </summary>
+        public static int ThreadedTasksMaxConcurrency
+        {
+            get => SchedulerImpl.Instance.threadedTasksMaxConcurrency;
+            set
+            {
+                SchedulerImpl instance = SchedulerImpl.Instance;
+                Interlocked.Exchange(ref SchedulerImpl.Instance.threadedTasksMaxConcurrency, value);
+                CheckAndExecuteThreadedTasks(instance);
+            }
+        }
+
+        /// <summary>
+        /// Gets current running thread tasks managed by <see cref="Scheduler"/>.
+        /// </summary>
+        public static int ThreadedTasksRunning
+        {
+            get => SchedulerImpl.Instance.threadedTasksRunning;
         }
 
         /// <summary>
