@@ -69,7 +69,7 @@ namespace AillieoUtils
         /// </summary>
         /// <param name="func">Function to execute.</param>
         /// <param name="cancellationToken"><see cref="CancellationToken"/> to cancel this task.</param>
-        /// <returns><see cref="Task{T}"/> created.</returns>
+        /// <returns><see cref="Task{object}"/> created.</returns>
         public static Task<object> RunThreaded(Func<object> func, CancellationToken cancellationToken = default)
         {
             SchedulerImpl instance = SchedulerImpl.Instance;
@@ -96,7 +96,7 @@ namespace AillieoUtils
             }
             else
             {
-                TaskCompletionSource<object> tcs = new TaskCompletionSource<object>();
+                var tcs = new TaskCompletionSource<object>();
                 object FuncWrapper()
                 {
                     cancellationToken.ThrowIfCancellationRequested();
