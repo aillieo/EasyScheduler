@@ -53,7 +53,9 @@ namespace AillieoUtils
         private static readonly Predicate<ScheduledTimingTask> removePredicateTiming = task => task.removed;
         private static readonly Predicate<ScheduledFrameTask> removePredicateFrame = task => task.removed;
 
+#if DEVELOPMENT_BUILD || UNITY_EDITOR
         private static readonly string errorWithCreatingStack = "{0}\n......Registered: \n{1}";
+#endif
 
         // process buffer dynamic
         private readonly List<ScheduledTimingTaskDynamic> tasksToProcessDynamic = new List<ScheduledTimingTaskDynamic>();
@@ -81,11 +83,11 @@ namespace AillieoUtils
 
             try
             {
-                this.earlyUpdate.SafeInvoke();
+                this.earlyUpdate.InvokeAll();
             }
             catch (Exception e)
             {
-                Debug.LogError(e);
+                Debug.LogException(e);
             }
 
             this.updatePhase = 0;
@@ -97,11 +99,11 @@ namespace AillieoUtils
 
             try
             {
-                this.fixedUpdate.SafeInvoke();
+                this.fixedUpdate.InvokeAll();
             }
             catch (Exception e)
             {
-                Debug.LogError(e);
+                Debug.LogException(e);
             }
 
             this.updatePhase = 0;
@@ -114,11 +116,11 @@ namespace AillieoUtils
 
             try
             {
-                this.preUpdate.SafeInvoke();
+                this.preUpdate.InvokeAll();
             }
             catch (Exception e)
             {
-                Debug.LogError(e);
+                Debug.LogException(e);
             }
 
             this.updatePhase = 0;
@@ -133,11 +135,11 @@ namespace AillieoUtils
 
             try
             {
-                this.update.SafeInvoke();
+                this.update.InvokeAll();
             }
             catch (Exception e)
             {
-                Debug.LogError(e);
+                Debug.LogException(e);
             }
 
             this.updatePhase = 0;
@@ -165,11 +167,11 @@ namespace AillieoUtils
 
             try
             {
-                this.preLateUpdate.SafeInvoke();
+                this.preLateUpdate.InvokeAll();
             }
             catch (Exception e)
             {
-                Debug.LogError(e);
+                Debug.LogException(e);
             }
 
             this.updatePhase = 0;
@@ -181,11 +183,11 @@ namespace AillieoUtils
 
             try
             {
-                this.lateUpdate.SafeInvoke();
+                this.lateUpdate.InvokeAll();
             }
             catch (Exception e)
             {
-                Debug.LogError(e);
+                Debug.LogException(e);
             }
 
             this.updatePhase = 0;
@@ -199,11 +201,11 @@ namespace AillieoUtils
 
             try
             {
-                this.postLateUpdate.SafeInvoke();
+                this.postLateUpdate.InvokeAll();
             }
             catch (Exception e)
             {
-                Debug.LogError(e);
+                Debug.LogException(e);
             }
 
             this.updatePhase = 0;

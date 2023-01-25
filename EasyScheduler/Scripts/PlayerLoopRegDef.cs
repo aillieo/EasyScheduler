@@ -81,14 +81,6 @@ namespace AillieoUtils
             {
                 PlayerLoop.SetPlayerLoop(currentPlayerLoop);
             }
-
-            UnityEngine.Debug.Log(
-                string.Join(
-                    "\n",
-                    PlayerLoop.GetCurrentPlayerLoop()
-                    .subSystemList
-                    .SelectMany(pls => pls.subSystemList)
-                    .Select(pls => pls.type)));
         }
 
         internal static void UnregisterPlayerLoops(SchedulerImpl schedulerImplInstance)
