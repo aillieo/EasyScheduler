@@ -322,7 +322,7 @@ namespace AillieoUtils
 
         private static ScheduledTimingTaskDynamic CreateTaskDynamic(Action action, int times, float interval, float delay, bool useUnscaledTime)
         {
-            var task = new ScheduledTimingTaskDynamic()
+            var task = new ScheduledTimingTaskDynamic(5)
             {
                 action = action,
                 times = times,
@@ -344,7 +344,7 @@ namespace AillieoUtils
 
         private static ScheduledTimingTaskStatic CreateTaskStatic(Action action, int times, float interval, float delay, bool useUnscaledTime)
         {
-            var task = new ScheduledTimingTaskStatic()
+            var task = new ScheduledTimingTaskStatic(5)
             {
                 action = action,
                 times = times,

@@ -7,9 +7,9 @@
 namespace AillieoUtils
 {
     using System;
-    using System.Collections.Concurrent;
     using System.Collections.Generic;
     using System.Threading;
+    using System.Threading.Tasks;
     using UnityEngine;
     using UnityEngine.Assertions;
 
@@ -43,9 +43,8 @@ namespace AillieoUtils
         internal readonly List<ScheduledFrameTaskStatic> managedStaticFrameTasks = new List<ScheduledFrameTaskStatic>();
 
         internal readonly SynchronizationContext synchronizationContext;
-        internal readonly ConcurrentQueue<(Func<object>, CancellationToken)> threadedTasksQueue = new ConcurrentQueue<(Func<object>, CancellationToken)>();
+        internal TaskFactory<object> taskFactory;
         internal int threadedTasksMaxConcurrency = 8;
-        internal int threadedTasksRunning = 0;
 
         internal float globalTimeScale = 1.0f;
         internal int updatePhase;
@@ -226,6 +225,12 @@ namespace AillieoUtils
             if (this == Instance)
             {
                 PlayerLoopRegDef.UnregisterPlayerLoops(this);
+
+                if (this.taskFactory != null)
+                {
+                    // todo
+                    (this.taskFactory.Scheduler as SimpleTaskScheduler).Dispose();
+                }
             }
 
             base.OnDestroy();
