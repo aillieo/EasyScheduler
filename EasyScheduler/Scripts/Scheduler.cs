@@ -6,7 +6,7 @@
 
 namespace AillieoUtils
 {
-    using System.Threading;
+    using System.Threading.Tasks;
 
     /// <summary>
     /// Scheduler contains various method including:
@@ -66,21 +66,33 @@ namespace AillieoUtils
         /// </summary>
         public static int ThreadedTasksMaxConcurrency
         {
-            get => SchedulerImpl.Instance.threadedTasksMaxConcurrency;
+            get
+            {
+                if (SchedulerImpl.Instance.taskFactory != null)
+                {
+                    TaskScheduler taskScheduler = SchedulerImpl.Instance.taskFactory.Scheduler;
+                    if (taskScheduler is SimpleTaskScheduler simpleTaskScheduler)
+                    {
+                        return simpleTaskScheduler.threadedTasksMaxConcurrency;
+                    }
+                }
+
+                return SchedulerImpl.Instance.threadedTasksMaxConcurrency;
+            }
+
             set
             {
-                SchedulerImpl instance = SchedulerImpl.Instance;
-                Interlocked.Exchange(ref SchedulerImpl.Instance.threadedTasksMaxConcurrency, value);
-                CheckAndExecuteThreadedTasks(instance);
-            }
-        }
+                if (SchedulerImpl.Instance.taskFactory != null)
+                {
+                    TaskScheduler taskScheduler = SchedulerImpl.Instance.taskFactory.Scheduler;
+                    if (taskScheduler is SimpleTaskScheduler simpleTaskScheduler)
+                    {
+                        simpleTaskScheduler.threadedTasksMaxConcurrency = value;
+                    }
+                }
 
-        /// <summary>
-        /// Gets current running thread tasks managed by <see cref="Scheduler"/>.
-        /// </summary>
-        public static int ThreadedTasksRunning
-        {
-            get => SchedulerImpl.Instance.threadedTasksRunning;
+                SchedulerImpl.Instance.threadedTasksMaxConcurrency = value;
+            }
         }
 
         /// <summary>

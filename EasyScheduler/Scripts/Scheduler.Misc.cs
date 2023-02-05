@@ -73,66 +73,12 @@ namespace AillieoUtils
         public static Task<object> RunThreaded(Func<object> func, CancellationToken cancellationToken = default)
         {
             SchedulerImpl instance = SchedulerImpl.Instance;
-            return InternalRunThreaded(instance, func, cancellationToken);
-        }
-
-        private static Task<object> InternalRunThreaded(SchedulerImpl instance, Func<object> func, CancellationToken cancellationToken)
-        {
-            if (instance.threadedTasksRunning < instance.threadedTasksMaxConcurrency)
+            if (instance.taskFactory == null)
             {
-                Interlocked.Increment(ref instance.threadedTasksRunning);
-                Task<object> task = Task.Factory.StartNew(func, cancellationToken, TaskCreationOptions.None, TaskScheduler.Default);
-
-                void ContinueFunc(Task tsk)
-                {
-                    Interlocked.Decrement(ref instance.threadedTasksRunning);
-                    CheckAndExecuteThreadedTasks(instance);
-                }
-
-                task.ContinueWith(ContinueFunc, CancellationToken.None, TaskContinuationOptions.OnlyOnRanToCompletion, TaskScheduler.Default);
-                task.ContinueWith(ContinueFunc, CancellationToken.None, TaskContinuationOptions.NotOnRanToCompletion, TaskScheduler.Default);
-
-                return task;
+                instance.taskFactory = new TaskFactory<object>(new SimpleTaskScheduler(instance.threadedTasksMaxConcurrency));
             }
-            else
-            {
-                var tcs = new TaskCompletionSource<object>();
-                object FuncWrapper()
-                {
-                    cancellationToken.ThrowIfCancellationRequested();
-                    try
-                    {
-                        var o = func();
-                        tcs.SetResult(o);
-                        return o;
-                    }
-                    catch (Exception e)
-                    {
-                        tcs.SetException(e);
-                    }
 
-                    return default;
-                }
-
-                instance.threadedTasksQueue.Enqueue((FuncWrapper, cancellationToken));
-                return tcs.Task;
-            }
-        }
-
-        private static void CheckAndExecuteThreadedTasks(SchedulerImpl instance)
-        {
-            while (instance.threadedTasksRunning < instance.threadedTasksMaxConcurrency)
-            {
-                if (instance.threadedTasksQueue.TryDequeue(out (Func<object>, CancellationToken) result))
-                {
-                    (Func<object> f, CancellationToken c) = result;
-                    InternalRunThreaded(instance, f, c);
-                }
-                else
-                {
-                    break;
-                }
-            }
+            return instance.taskFactory.StartNew(func, cancellationToken);
         }
     }
 }

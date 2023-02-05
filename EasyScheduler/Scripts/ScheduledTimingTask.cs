@@ -22,12 +22,14 @@ namespace AillieoUtils
 
 #if DEVELOPMENT_BUILD || UNITY_EDITOR
         internal StackTrace creatingStackTrace;
-
-        internal ScheduledTimingTask()
-        {
-            this.creatingStackTrace = new StackTrace(5, true);
-        }
 #endif
+
+        internal ScheduledTimingTask(int skipFrames = 0)
+        {
+#if DEVELOPMENT_BUILD || UNITY_EDITOR
+            this.creatingStackTrace = new StackTrace(skipFrames, true);
+#endif
+        }
 
         /// <summary>
         /// Gets or sets the local time scale for the task.
@@ -56,7 +58,8 @@ namespace AillieoUtils
     {
         internal LinkedListNode<ScheduledTimingTaskDynamic> handle;
 
-        internal ScheduledTimingTaskDynamic()
+        internal ScheduledTimingTaskDynamic(int skipFrames = 0)
+            : base(skipFrames)
         {
         }
     }
@@ -64,7 +67,8 @@ namespace AillieoUtils
     /// <inheritdoc/>
     public class ScheduledTimingTaskStatic : ScheduledTimingTask
     {
-        internal ScheduledTimingTaskStatic()
+        internal ScheduledTimingTaskStatic(int skipFrames = 0)
+            : base(skipFrames)
         {
         }
     }
