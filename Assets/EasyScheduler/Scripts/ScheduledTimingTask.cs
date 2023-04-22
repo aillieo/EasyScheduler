@@ -13,8 +13,10 @@ namespace AillieoUtils
     /// <summary>
     /// Task scheduled by time.
     /// </summary>
-    public abstract class ScheduledTimingTask : IScheduledTask
+    public class ScheduledTimingTask : IScheduledTask
     {
+        internal LinkedListNode<ScheduledTimingTask> handle;
+
         internal int times;
         internal Action action;
         internal float interval;
@@ -50,26 +52,6 @@ namespace AillieoUtils
         public bool Unschedule()
         {
             return Scheduler.Unschedule(this);
-        }
-    }
-
-    /// <inheritdoc/>
-    public class ScheduledTimingTaskDynamic : ScheduledTimingTask
-    {
-        internal LinkedListNode<ScheduledTimingTaskDynamic> handle;
-
-        internal ScheduledTimingTaskDynamic(int skipFrames = 0)
-            : base(skipFrames)
-        {
-        }
-    }
-
-    /// <inheritdoc/>
-    public class ScheduledTimingTaskStatic : ScheduledTimingTask
-    {
-        internal ScheduledTimingTaskStatic(int skipFrames = 0)
-            : base(skipFrames)
-        {
         }
     }
 }

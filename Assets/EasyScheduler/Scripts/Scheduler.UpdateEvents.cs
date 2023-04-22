@@ -17,8 +17,8 @@ namespace AillieoUtils
         /// Schedule a task on every EarlyUpdate.
         /// </summary>
         /// <param name="action">Action to execute.</param>
-        /// <returns><see cref="Handle"/> for the EarlyUpdate event.</returns>
-        public static Handle ScheduleEarlyUpdate(Action action)
+        /// <returns><see cref="EventHandle"/> for the EarlyUpdate event.</returns>
+        public static EventHandle ScheduleEarlyUpdate(Action action)
         {
             return SchedulerImpl.Instance.earlyUpdate.AddListener(action);
         }
@@ -26,9 +26,9 @@ namespace AillieoUtils
         /// <summary>
         /// Unschedule the callback registered to EarlyUpdate by handle.
         /// </summary>
-        /// <param name="handle"><see cref="Handle"/> to unregister.</param>
+        /// <param name="handle"><see cref="EventHandle"/> to unregister.</param>
         /// <returns>Unschedule succeed.</returns>
-        public static bool UnscheduleEarlyUpdate(Handle handle)
+        public static bool UnscheduleEarlyUpdate(EventHandle handle)
         {
             return SchedulerImpl.Instance.earlyUpdate.Remove(handle);
         }
@@ -47,8 +47,8 @@ namespace AillieoUtils
         /// Schedule a task on every FixedUpdate.
         /// </summary>
         /// <param name="action">Action to execute.</param>
-        /// <returns><see cref="Handle"/> for the FixedUpdate event.</returns>
-        public static Handle ScheduleFixedUpdate(Action action)
+        /// <returns><see cref="EventHandle"/> for the FixedUpdate event.</returns>
+        public static EventHandle ScheduleFixedUpdate(Action action)
         {
             return SchedulerImpl.Instance.fixedUpdate.AddListener(action);
         }
@@ -56,9 +56,9 @@ namespace AillieoUtils
         /// <summary>
         /// Unschedule the callback registered to FixedUpdate by handle.
         /// </summary>
-        /// <param name="handle"><see cref="Handle"/> to unregister.</param>
+        /// <param name="handle"><see cref="EventHandle"/> to unregister.</param>
         /// <returns>Unschedule succeed.</returns>
-        public static bool UnscheduleFixedUpdate(Handle handle)
+        public static bool UnscheduleFixedUpdate(EventHandle handle)
         {
             return SchedulerImpl.Instance.fixedUpdate.Remove(handle);
         }
@@ -77,8 +77,8 @@ namespace AillieoUtils
         /// Schedule a task on every PreUpdate.
         /// </summary>
         /// <param name="action">Action to execute.</param>
-        /// <returns><see cref="Handle"/> for the PreUpdate event.</returns>
-        public static Handle SchedulePreUpdate(Action action)
+        /// <returns><see cref="EventHandle"/> for the PreUpdate event.</returns>
+        public static EventHandle SchedulePreUpdate(Action action)
         {
             return SchedulerImpl.Instance.preUpdate.AddListener(action);
         }
@@ -88,7 +88,7 @@ namespace AillieoUtils
         /// </summary>
         /// <param name="handle"><see cref="Handle"/> to unregister.</param>
         /// <returns>Unschedule succeed.</returns>
-        public static bool UnschedulePreUpdate(Handle handle)
+        public static bool UnschedulePreUpdate(EventHandle handle)
         {
             return SchedulerImpl.Instance.preUpdate.Remove(handle);
         }
@@ -107,8 +107,8 @@ namespace AillieoUtils
         /// Schedule a task on every Update.
         /// </summary>
         /// <param name="action">Action to execute.</param>
-        /// <returns><see cref="Handle"/> for the Update event.</returns>
-        public static Handle ScheduleUpdate(Action action)
+        /// <returns><see cref="EventHandle"/> for the Update event.</returns>
+        public static EventHandle ScheduleUpdate(Action action)
         {
             return SchedulerImpl.Instance.update.AddListener(action);
         }
@@ -116,9 +116,9 @@ namespace AillieoUtils
         /// <summary>
         /// Unschedule the callback registered to Update by handle.
         /// </summary>
-        /// <param name="handle"><see cref="Handle"/> to unregister.</param>
+        /// <param name="handle"><see cref="EventHandle"/> to unregister.</param>
         /// <returns>Unschedule succeed.</returns>
-        public static bool UnscheduleUpdate(Handle handle)
+        public static bool UnscheduleUpdate(EventHandle handle)
         {
             return SchedulerImpl.Instance.update.Remove(handle);
         }
@@ -137,8 +137,8 @@ namespace AillieoUtils
         /// Schedule a task on every PreLateUpdate.
         /// </summary>
         /// <param name="action">Action to execute.</param>
-        /// <returns><see cref="Handle"/> for the PreLateUpdate event.</returns>
-        public static Handle SchedulePreLateUpdate(Action action)
+        /// <returns><see cref="EventHandle"/> for the PreLateUpdate event.</returns>
+        public static EventHandle SchedulePreLateUpdate(Action action)
         {
             return SchedulerImpl.Instance.preLateUpdate.AddListener(action);
         }
@@ -146,9 +146,9 @@ namespace AillieoUtils
         /// <summary>
         /// Unschedule the callback registered to PreLateUpdate by handle.
         /// </summary>
-        /// <param name="handle"><see cref="Handle"/> to unregister.</param>
+        /// <param name="handle"><see cref="EventHandle"/> to unregister.</param>
         /// <returns>Unschedule succeed.</returns>
-        public static bool UnschedulePreLateUpdate(Handle handle)
+        public static bool UnschedulePreLateUpdate(EventHandle handle)
         {
             return SchedulerImpl.Instance.preLateUpdate.Remove(handle);
         }
@@ -167,8 +167,8 @@ namespace AillieoUtils
         /// Schedule a task on every LateUpdate.
         /// </summary>
         /// <param name="action">Action to execute.</param>
-        /// <returns><see cref="Handle"/> for the LateUpdate event.</returns>
-        public static Handle ScheduleLateUpdate(Action action)
+        /// <returns><see cref="EventHandle"/> for the LateUpdate event.</returns>
+        public static EventHandle ScheduleLateUpdate(Action action)
         {
             return SchedulerImpl.Instance.lateUpdate.AddListener(action);
         }
@@ -176,9 +176,9 @@ namespace AillieoUtils
         /// <summary>
         /// Unschedule the callback registered to LateUpdate by handle.
         /// </summary>
-        /// <param name="handle"><see cref="Handle"/> to unregister.</param>
+        /// <param name="handle"><see cref="EventHandle"/> to unregister.</param>
         /// <returns>Unschedule succeed.</returns>
-        public static bool UnscheduleLateUpdate(Handle handle)
+        public static bool UnscheduleLateUpdate(EventHandle handle)
         {
             return SchedulerImpl.Instance.lateUpdate.Remove(handle);
         }
@@ -197,8 +197,8 @@ namespace AillieoUtils
         /// Schedule a task on every PostLateUpdate.
         /// </summary>
         /// <param name="action">Action to execute.</param>
-        /// <returns><see cref="Handle"/> for the PostLateUpdate event.</returns>
-        public static Handle SchedulePostLateUpdate(Action action)
+        /// <returns><see cref="EventHandle"/> for the PostLateUpdate event.</returns>
+        public static EventHandle SchedulePostLateUpdate(Action action)
         {
             return SchedulerImpl.Instance.postLateUpdate.AddListener(action);
         }
@@ -206,9 +206,9 @@ namespace AillieoUtils
         /// <summary>
         /// Unschedule the callback registered to PostLateUpdate by handle.
         /// </summary>
-        /// <param name="handle"><see cref="Handle"/> to unregister.</param>
+        /// <param name="handle"><see cref="EventHandle"/> to unregister.</param>
         /// <returns>Unschedule succeed.</returns>
-        public static bool UnschedulePostLateUpdate(Handle handle)
+        public static bool UnschedulePostLateUpdate(EventHandle handle)
         {
             return SchedulerImpl.Instance.postLateUpdate.Remove(handle);
         }

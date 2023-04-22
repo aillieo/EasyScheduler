@@ -10,8 +10,6 @@ namespace AillieoUtils.Tests
     [Category("TestTimingTask")]
     public class TestTimingTask
     {
-        private readonly static Scheduler.ScheduleMode[] modes = new Scheduler.ScheduleMode[2] { Scheduler.ScheduleMode.Dynamic, Scheduler.ScheduleMode.Static };
-
         [UnityTest]
         public IEnumerator TestScheduleOnce()
         {
@@ -40,7 +38,7 @@ namespace AillieoUtils.Tests
         }
 
         [UnityTest]
-        public IEnumerator TestSchedule1([ValueSource(nameof(modes))] Scheduler.ScheduleMode mode)
+        public IEnumerator TestSchedule1()
         {
             int rest = 5;
 
@@ -50,7 +48,7 @@ namespace AillieoUtils.Tests
                 () =>
                 {
                     a0++;
-                }, mode, 3, 0.1f);
+                }, 3, 0.1f);
             Scheduler.Schedule(
                 () =>
                 {
@@ -65,13 +63,13 @@ namespace AillieoUtils.Tests
                         Assert.AreNotEqual(a1, a0);
                         rest--;
                     }
-                }, mode, 5, 0.1f);
+                }, 5, 0.1f);
 
             yield return new WaitWhile(() => rest > 0);
         }
 
         [UnityTest]
-        public IEnumerator TestSchedule2([ValueSource(nameof(modes))] Scheduler.ScheduleMode mode)
+        public IEnumerator TestSchedule2()
         {
             int rest = 6;
 
@@ -81,24 +79,24 @@ namespace AillieoUtils.Tests
                 () =>
                 {
                     a2++;
-                }, mode, 10, 0.5f);
+                }, 10, 0.5f);
             Scheduler.Schedule(
                 () =>
                 {
                     a3++;
-                }, mode, 20, 0.25f);
+                }, 20, 0.25f);
             Scheduler.Schedule(
                 () =>
                 {
                     Assert.AreEqual(a2 * 2, a3);
                     rest--;
-                }, mode, 6, 1);
+                }, 6, 1);
 
             yield return new WaitWhile(() => rest > 0);
         }
 
         [UnityTest]
-        public IEnumerator TestSchedule3([ValueSource(nameof(modes))] Scheduler.ScheduleMode mode)
+        public IEnumerator TestSchedule3()
         {
             int rest = 20;
 
@@ -108,12 +106,12 @@ namespace AillieoUtils.Tests
                 () =>
                 {
                     a4++;
-                }, mode, 10, 0.4f);
+                }, 10, 0.4f);
             var t = Scheduler.Schedule(
                 () =>
                 {
                     a5++;
-                }, mode, 20, 0.4f);
+                }, 20, 0.4f);
             Scheduler.ScheduleOnce(
                 () =>
                 {
@@ -125,13 +123,13 @@ namespace AillieoUtils.Tests
                 {
                     Assert.AreEqual(a4, a5);
                     rest--;
-                }, mode, 20, 0.2f);
+                }, 20, 0.2f);
 
             yield return new WaitWhile(() => rest > 0);
         }
 
         [UnityTest]
-        public IEnumerator TestUnschedule1([ValueSource(nameof(modes))] Scheduler.ScheduleMode mode)
+        public IEnumerator TestUnschedule1()
         {
             int rest = 1;
 
@@ -142,7 +140,7 @@ namespace AillieoUtils.Tests
                 {
                     n++;
                     tsk.Unschedule();
-                }, mode, 0.001f);
+                }, 0.001f);
 
             yield return new WaitForSeconds(1);
 
@@ -154,7 +152,7 @@ namespace AillieoUtils.Tests
         }
 
         [UnityTest]
-        public IEnumerator TestUnschedule2([ValueSource(nameof(modes))] Scheduler.ScheduleMode mode)
+        public IEnumerator TestUnschedule2()
         {
             int rest = 1;
 
@@ -165,7 +163,7 @@ namespace AillieoUtils.Tests
                 {
                     n++;
                     tsk.Unschedule();
-                }, mode, 0.5f);
+                }, 0.5f);
 
             yield return new WaitForSeconds(1);
 

@@ -19,27 +19,6 @@ namespace AillieoUtils
     public static partial class Scheduler
     {
         /// <summary>
-        /// Default schedule mode when no explicit mode argument provided.
-        /// </summary>
-        public static ScheduleMode defaultScheduleMode = ScheduleMode.Dynamic;
-
-        /// <summary>
-        /// Mode to schedule a task.
-        /// </summary>
-        public enum ScheduleMode
-        {
-            /// <summary>
-            /// Dynamic mode: for short life tasks and intended to be created/deleted frequently.
-            /// </summary>
-            Dynamic = 0,
-
-            /// <summary>
-            /// Static mode: for tasks that exist long lifespans and are not created/deleted frequently.
-            /// </summary>
-            Static,
-        }
-
-        /// <summary>
         /// Gets a value indicating whether the SchedulerImpl instance exists.
         /// </summary>
         public static bool HasInstance => SchedulerImpl.HasInstance;
@@ -113,14 +92,10 @@ namespace AillieoUtils
                 $"\"GlobalTimeScale\" :{ins.globalTimeScale}, " +
                 $"\"UpdatePhase\" : {ins.updatePhase}," +
 
-                $"\"Dynamic Timing Tasks\" :{ins.managedDynamicTasks.Count}," +
-                $"\"Dynamic Timing Tasks Unscaled\" :{ins.managedDynamicTasksUnscaled.Count}," +
+                $"\"Timing Tasks\" :{ins.managedTasks.Count}," +
+                $"\"Timing Tasks Unscaled\" :{ins.managedTasksUnscaled.Count}," +
 
-                $"\"Static Timing Tasks\" :{ins.managedStaticTasks.Count}," +
-                $"\"Static Timing Tasks Unscaled\" :{ins.managedStaticTasksUnscaled.Count}," +
-
-                $"\"Dynamic Frame Tasks\" :{ins.managedDynamicFrameTasks.Count}," +
-                $"\"Static Frame Tasks\" :{ins.managedStaticFrameTasks.Count}," +
+                $"\"Frame Tasks\" :{ins.managedFrameTasks.Count}," +
 
                 $"\"EarlyUpdate\" :{ins.earlyUpdate.ListenerCount}," +
                 $"\"PreUpdate\" :{ins.preUpdate.ListenerCount}," +
