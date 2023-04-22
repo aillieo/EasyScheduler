@@ -13,8 +13,10 @@ namespace AillieoUtils
     /// <summary>
     /// Task scheduled by frame.
     /// </summary>
-    public abstract class ScheduledFrameTask : IScheduledTask
+    public class ScheduledFrameTask : IScheduledTask
     {
+        internal LinkedListNode<ScheduledFrameTask> handle;
+
         internal int times;
         internal Action action;
         internal ushort frameInterval;
@@ -23,9 +25,9 @@ namespace AillieoUtils
 #if DEVELOPMENT_BUILD || UNITY_EDITOR
         internal StackTrace creatingStackTrace;
 
-        internal ScheduledFrameTask()
+        internal ScheduledFrameTask(int skipFrames = 0)
         {
-            this.creatingStackTrace = new StackTrace(5, true);
+            this.creatingStackTrace = new StackTrace(skipFrames, true);
         }
 #endif
 
@@ -43,24 +45,6 @@ namespace AillieoUtils
         public bool Unschedule()
         {
             return Scheduler.Unschedule(this);
-        }
-    }
-
-    /// <inheritdoc/>
-    public class ScheduledFrameTaskDynamic : ScheduledFrameTask
-    {
-        internal LinkedListNode<ScheduledFrameTaskDynamic> handle;
-
-        internal ScheduledFrameTaskDynamic()
-        {
-        }
-    }
-
-    /// <inheritdoc/>
-    public class ScheduledFrameTaskStatic : ScheduledFrameTask
-    {
-        internal ScheduledFrameTaskStatic()
-        {
         }
     }
 }

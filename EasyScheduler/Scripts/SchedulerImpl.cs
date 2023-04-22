@@ -8,6 +8,7 @@ namespace AillieoUtils
 {
     using System;
     using System.Collections.Generic;
+    using System.Diagnostics;
     using System.Threading;
     using System.Threading.Tasks;
     using UnityEngine;
@@ -17,32 +18,25 @@ namespace AillieoUtils
     internal class SchedulerImpl : SingletonMonoBehaviour<SchedulerImpl>
     {
         // events
-        internal readonly Event earlyUpdate = new Event();
-        internal readonly Event fixedUpdate = new Event();
-        internal readonly Event preUpdate = new Event();
-        internal readonly Event update = new Event();
-        internal readonly Event preLateUpdate = new Event();
-        internal readonly Event lateUpdate = new Event();
-        internal readonly Event postLateUpdate = new Event();
+        internal readonly EasyDelegate earlyUpdate = new EasyDelegate();
+        internal readonly EasyDelegate fixedUpdate = new EasyDelegate();
+        internal readonly EasyDelegate preUpdate = new EasyDelegate();
+        internal readonly EasyDelegate update = new EasyDelegate();
+        internal readonly EasyDelegate preLateUpdate = new EasyDelegate();
+        internal readonly EasyDelegate lateUpdate = new EasyDelegate();
+        internal readonly EasyDelegate postLateUpdate = new EasyDelegate();
 
         // delay
         internal readonly Queue<Action>[] delayQueues = new Queue<Action>[] { new Queue<Action>(), new Queue<Action>() };
 
         // dynamic
-        internal readonly LinkedList<ScheduledTimingTaskDynamic> managedDynamicTasks = new LinkedList<ScheduledTimingTaskDynamic>();
-        internal readonly LinkedList<ScheduledTimingTaskDynamic> managedDynamicTasksUnscaled = new LinkedList<ScheduledTimingTaskDynamic>();
-
-        // static
-        internal readonly List<ScheduledTimingTaskStatic> managedStaticTasks = new List<ScheduledTimingTaskStatic>();
-        internal readonly List<ScheduledTimingTaskStatic> managedStaticTasksUnscaled = new List<ScheduledTimingTaskStatic>();
+        internal readonly LinkedList<ScheduledTimingTask> managedTasks = new LinkedList<ScheduledTimingTask>();
+        internal readonly LinkedList<ScheduledTimingTask> managedTasksUnscaled = new LinkedList<ScheduledTimingTask>();
 
         // dynamic
-        internal readonly LinkedList<ScheduledFrameTaskDynamic> managedDynamicFrameTasks = new LinkedList<ScheduledFrameTaskDynamic>();
+        internal readonly LinkedList<ScheduledFrameTask> managedFrameTasks = new LinkedList<ScheduledFrameTask>();
 
-        // static
-        internal readonly List<ScheduledFrameTaskStatic> managedStaticFrameTasks = new List<ScheduledFrameTaskStatic>();
-
-        internal readonly SynchronizationContext synchronizationContext;
+        internal readonly SynchronizationContext synchronizationContext = SynchronizationContext.Current;
         internal TaskFactory<object> taskFactory;
         internal int threadedTasksMaxConcurrency = 8;
 
@@ -52,28 +46,11 @@ namespace AillieoUtils
         private static readonly Predicate<ScheduledTimingTask> removePredicateTiming = task => task.removed;
         private static readonly Predicate<ScheduledFrameTask> removePredicateFrame = task => task.removed;
 
-#if DEVELOPMENT_BUILD || UNITY_EDITOR
-        private static readonly string errorWithCreatingStack = "{0}\n......Registered: \n{1}";
-#endif
-
         // process buffer dynamic
-        private readonly List<ScheduledTimingTaskDynamic> tasksToProcessDynamic = new List<ScheduledTimingTaskDynamic>();
-
-        // process buffer static
-        private readonly List<ScheduledTimingTaskStatic> tasksToProcessStatic = new List<ScheduledTimingTaskStatic>();
+        private readonly List<ScheduledTimingTask> tasksToProcess = new List<ScheduledTimingTask>();
 
         // process buffer dynamic frame
-        private readonly List<ScheduledFrameTaskDynamic> frameTasksToProcessDynamic = new List<ScheduledFrameTaskDynamic>();
-
-        // process buffer static frame
-        private readonly List<ScheduledFrameTaskStatic> frameTasksToProcessStatic = new List<ScheduledFrameTaskStatic>();
-
-        private SchedulerImpl()
-        {
-            // typeof(UnitySynchronizationContext)
-            this.synchronizationContext = SynchronizationContext.Current;
-            Assert.IsNotNull(this.synchronizationContext);
-        }
+        private readonly List<ScheduledFrameTask> frameTasksToProcess = new List<ScheduledFrameTask>();
 
         internal void PlayerLoopEarlyUpdate()
         {
@@ -86,7 +63,7 @@ namespace AillieoUtils
             }
             catch (Exception e)
             {
-                Debug.LogException(e);
+                UnityEngine.Debug.LogException(e);
             }
 
             this.updatePhase = 0;
@@ -102,7 +79,7 @@ namespace AillieoUtils
             }
             catch (Exception e)
             {
-                Debug.LogException(e);
+                UnityEngine.Debug.LogException(e);
             }
 
             this.updatePhase = 0;
@@ -119,7 +96,7 @@ namespace AillieoUtils
             }
             catch (Exception e)
             {
-                Debug.LogException(e);
+                UnityEngine.Debug.LogException(e);
             }
 
             this.updatePhase = 0;
@@ -138,7 +115,7 @@ namespace AillieoUtils
             }
             catch (Exception e)
             {
-                Debug.LogException(e);
+                UnityEngine.Debug.LogException(e);
             }
 
             this.updatePhase = 0;
@@ -150,14 +127,10 @@ namespace AillieoUtils
 
             deltaTime *= this.globalTimeScale;
 
-            this.ProcessTimingTasksStatic(this.managedStaticTasks, deltaTime);
-            this.ProcessTimingTasksStatic(this.managedStaticTasksUnscaled, unscaledDeltaTime);
+            this.ProcessTimingTasks(this.managedTasks, deltaTime);
+            this.ProcessTimingTasks(this.managedTasksUnscaled, unscaledDeltaTime);
 
-            this.ProcessTimingTasksDynamic(this.managedDynamicTasks, deltaTime);
-            this.ProcessTimingTasksDynamic(this.managedDynamicTasksUnscaled, unscaledDeltaTime);
-
-            this.ProcessFrameTasksStatic();
-            this.ProcessFrameTasksDynamic();
+            this.ProcessFrameTasks();
         }
 
         internal void PlayerLoopPreLateUpdate()
@@ -170,7 +143,7 @@ namespace AillieoUtils
             }
             catch (Exception e)
             {
-                Debug.LogException(e);
+                UnityEngine.Debug.LogException(e);
             }
 
             this.updatePhase = 0;
@@ -186,7 +159,7 @@ namespace AillieoUtils
             }
             catch (Exception e)
             {
-                Debug.LogException(e);
+                UnityEngine.Debug.LogException(e);
             }
 
             this.updatePhase = 0;
@@ -204,7 +177,7 @@ namespace AillieoUtils
             }
             catch (Exception e)
             {
-                Debug.LogException(e);
+                UnityEngine.Debug.LogException(e);
             }
 
             this.updatePhase = 0;
@@ -213,6 +186,8 @@ namespace AillieoUtils
         protected override void Awake()
         {
             base.Awake();
+
+            Assert.IsNotNull(this.synchronizationContext);
 
             if (this == Instance)
             {
@@ -226,10 +201,10 @@ namespace AillieoUtils
             {
                 PlayerLoopRegDef.UnregisterPlayerLoops(this);
 
-                if (this.taskFactory != null)
+                if (this.taskFactory != null && this.taskFactory.Scheduler is SimpleTaskScheduler simpleTaskScheduler)
                 {
-                    // todo
-                    (this.taskFactory.Scheduler as SimpleTaskScheduler).Dispose();
+                    simpleTaskScheduler.Dispose();
+                    this.taskFactory = null;
                 }
             }
 
@@ -241,6 +216,13 @@ namespace AillieoUtils
         {
             CreateInstance();
         }
+
+#if DEVELOPMENT_BUILD || UNITY_EDITOR
+        private static string FormatErrorWithStack(Exception exception, StackTrace creatingStackTrace)
+        {
+            return $"{exception}\n......Registered: \n{creatingStackTrace}";
+        }
+#endif
 
         private void ProcessDelayTasks()
         {
@@ -258,16 +240,16 @@ namespace AillieoUtils
                 }
                 catch (Exception e)
                 {
-                    Debug.LogError(e);
+                    UnityEngine.Debug.LogException(e);
                 }
             }
         }
 
-        private void ProcessTimingTasksDynamic(LinkedList<ScheduledTimingTaskDynamic> tasks, float delta)
+        private void ProcessTimingTasks(LinkedList<ScheduledTimingTask> tasks, float delta)
         {
             var hasAnyToRemove = false;
-            this.tasksToProcessDynamic.AddRange(tasks);
-            foreach (var task in this.tasksToProcessDynamic)
+            this.tasksToProcess.AddRange(tasks);
+            foreach (var task in this.tasksToProcess)
             {
                 task.timer += delta * task.localTimeScale;
                 while (task.timer > task.interval)
@@ -287,9 +269,9 @@ namespace AillieoUtils
                     catch (Exception e)
                     {
 #if DEVELOPMENT_BUILD || UNITY_EDITOR
-                        Debug.LogErrorFormat(errorWithCreatingStack, e, task.creatingStackTrace);
+                        UnityEngine.Debug.LogError(FormatErrorWithStack(e, task.creatingStackTrace));
 #else
-                        Debug.LogError(e);
+                        UnityEngine.Debug.LogException(e);
 #endif
                     }
 
@@ -308,68 +290,18 @@ namespace AillieoUtils
                 }
             }
 
-            this.tasksToProcessDynamic.Clear();
+            this.tasksToProcess.Clear();
             if (hasAnyToRemove)
             {
                 tasks.RemoveAll(removePredicateTiming);
             }
         }
 
-        private void ProcessTimingTasksStatic(List<ScheduledTimingTaskStatic> tasks, float delta)
+        private void ProcessFrameTasks()
         {
             var hasAnyToRemove = false;
-            this.tasksToProcessStatic.AddRange(tasks);
-            foreach (var task in this.tasksToProcessStatic)
-            {
-                task.timer += delta * task.localTimeScale;
-                while (task.timer > task.interval)
-                {
-                    if (task.removed)
-                    {
-                        hasAnyToRemove = true;
-                        break;
-                    }
-
-                    task.timer -= task.interval;
-                    try
-                    {
-                        task.action.Invoke();
-                    }
-                    catch (Exception e)
-                    {
-#if DEVELOPMENT_BUILD || UNITY_EDITOR
-                        Debug.LogErrorFormat(errorWithCreatingStack, e, task.creatingStackTrace);
-#else
-                        Debug.LogError(e);
-#endif
-                    }
-
-                    if (task.times > 0)
-                    {
-                        task.times--;
-                        if (task.times == 0)
-                        {
-                            task.isDone = true;
-                            task.removed = true;
-                            hasAnyToRemove = true;
-                            break;
-                        }
-                    }
-                }
-            }
-
-            this.tasksToProcessStatic.Clear();
-            if (hasAnyToRemove)
-            {
-                tasks.RemoveAll(removePredicateTiming);
-            }
-        }
-
-        private void ProcessFrameTasksDynamic()
-        {
-            var hasAnyToRemove = false;
-            this.frameTasksToProcessDynamic.AddRange(this.managedDynamicFrameTasks);
-            foreach (var task in this.frameTasksToProcessDynamic)
+            this.frameTasksToProcess.AddRange(this.managedFrameTasks);
+            foreach (var task in this.frameTasksToProcess)
             {
                 if (task.removed)
                 {
@@ -387,9 +319,9 @@ namespace AillieoUtils
                     catch (Exception e)
                     {
 #if DEVELOPMENT_BUILD || UNITY_EDITOR
-                        Debug.LogErrorFormat(errorWithCreatingStack, e, task.creatingStackTrace);
+                        UnityEngine.Debug.LogError(FormatErrorWithStack(e, task.creatingStackTrace));
 #else
-                        Debug.LogError(e);
+                        UnityEngine.Debug.LogException(e);
 #endif
                     }
 
@@ -406,59 +338,10 @@ namespace AillieoUtils
                 }
             }
 
-            this.frameTasksToProcessDynamic.Clear();
+            this.frameTasksToProcess.Clear();
             if (hasAnyToRemove)
             {
-                this.managedDynamicFrameTasks.RemoveAll(removePredicateFrame);
-            }
-        }
-
-        private void ProcessFrameTasksStatic()
-        {
-            var hasAnyToRemove = false;
-            this.frameTasksToProcessStatic.AddRange(this.managedStaticFrameTasks);
-            foreach (var task in this.frameTasksToProcessStatic)
-            {
-                if (task.removed)
-                {
-                    hasAnyToRemove = true;
-                    continue;
-                }
-
-                task.counter++;
-                if (task.counter >= task.frameInterval)
-                {
-                    task.counter -= task.frameInterval;
-                    try
-                    {
-                        task.action.Invoke();
-                    }
-                    catch (Exception e)
-                    {
-#if DEVELOPMENT_BUILD || UNITY_EDITOR
-                        Debug.LogErrorFormat(errorWithCreatingStack, e, task.creatingStackTrace);
-#else
-                        Debug.LogError(e);
-#endif
-                    }
-
-                    if (task.times > 0)
-                    {
-                        task.times--;
-                        if (task.times == 0)
-                        {
-                            task.isDone = true;
-                            task.removed = true;
-                            hasAnyToRemove = true;
-                        }
-                    }
-                }
-            }
-
-            this.frameTasksToProcessStatic.Clear();
-            if (hasAnyToRemove)
-            {
-                this.managedStaticFrameTasks.RemoveAll(removePredicateFrame);
+                this.managedFrameTasks.RemoveAll(removePredicateFrame);
             }
         }
     }

@@ -5,8 +5,7 @@
         "UnityEditor.TestRunner",
         "AillieoUtils.EasyScheduler",
         "AillieoUtils.EasyEvents",
-        "AillieoUtils.UnitySingleton",
-        "AillieoUtils.Collections"
+        "AillieoUtils.UnitySingleton"
     ],
     "includePlatforms": [],
     "excludePlatforms": [],

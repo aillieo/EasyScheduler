@@ -21,7 +21,7 @@ namespace AillieoUtils
         /// <returns>Scheduled task.</returns>
         public static ScheduledFrameTask ScheduleAfterFrames(Action action, ushort frames)
         {
-            return CreateFrameTask(action, ScheduleMode.Dynamic, 1, frames, 0);
+            return CreateFrameTask(action, 1, frames, 0);
         }
 
         /// <summary>
@@ -31,59 +31,55 @@ namespace AillieoUtils
         /// <returns>Scheduled task.</returns>
         public static ScheduledFrameTask ScheduleNextFrame(Action action)
         {
-            return CreateFrameTask(action, ScheduleMode.Dynamic, 1, 1, 0);
+            return CreateFrameTask(action, 1, 1, 0);
         }
 
         /// <summary>
         /// Schedule a task by frame.
         /// </summary>
         /// <param name="action">Action to execute.</param>
-        /// <param name="mode">Mode to schedule <see cref="ScheduleMode"/>>.</param>
         /// <param name="frameInterval">Frame count between executions.</param>
         /// <returns>Scheduled task.</returns>
-        public static ScheduledFrameTask ScheduleByFrame(Action action, ScheduleMode mode, ushort frameInterval)
+        public static ScheduledFrameTask ScheduleByFrame(Action action, ushort frameInterval)
         {
-            return CreateFrameTask(action, mode, -1, frameInterval, 0);
+            return CreateFrameTask(action, -1, frameInterval, 0);
         }
 
         /// <summary>
         /// Schedule a task by frame.
         /// </summary>
         /// <param name="action">Action to execute.</param>
-        /// <param name="mode">Mode to schedule <see cref="ScheduleMode"/>>.</param>
         /// <param name="times">Execution repeat times.</param>
         /// <param name="frameInterval">Frame count between executions.</param>
         /// <returns>Scheduled task.</returns>
-        public static ScheduledFrameTask ScheduleByFrame(Action action, ScheduleMode mode, int times, ushort frameInterval)
+        public static ScheduledFrameTask ScheduleByFrame(Action action, int times, ushort frameInterval)
         {
-            return CreateFrameTask(action, mode, times, frameInterval, 0);
+            return CreateFrameTask(action, times, frameInterval, 0);
         }
 
         /// <summary>
         /// Schedule a task by frame.
         /// </summary>
         /// <param name="action">Action to execute.</param>
-        /// <param name="mode">Mode to schedule <see cref="ScheduleMode"/>>.</param>
         /// <param name="frameInterval">Frame count between executions.</param>
         /// <param name="initialPhase">Frame starting count in the first period.</param>
         /// <returns>Scheduled task.</returns>
-        public static ScheduledFrameTask ScheduleByFrameWithInitialPhase(Action action, ScheduleMode mode, ushort frameInterval, int initialPhase)
+        public static ScheduledFrameTask ScheduleByFrameWithInitialPhase(Action action, ushort frameInterval, int initialPhase)
         {
-            return CreateFrameTask(action, mode, -1, frameInterval, initialPhase);
+            return CreateFrameTask(action, -1, frameInterval, initialPhase);
         }
 
         /// <summary>
         /// Schedule a task by frame.
         /// </summary>
         /// <param name="action">Action to execute.</param>
-        /// <param name="mode">Mode to schedule <see cref="ScheduleMode"/>>.</param>
         /// <param name="times">Execution repeat times.</param>
         /// <param name="frameInterval">Frame count between executions.</param>
         /// <param name="initialPhase">Frame starting count in the first period.</param>
         /// <returns>Scheduled task.</returns>
-        public static ScheduledFrameTask ScheduleByFrameWithInitialPhase(Action action, ScheduleMode mode, int times, ushort frameInterval, int initialPhase)
+        public static ScheduledFrameTask ScheduleByFrameWithInitialPhase(Action action, int times, ushort frameInterval, int initialPhase)
         {
-            return CreateFrameTask(action, mode, times, frameInterval, initialPhase);
+            return CreateFrameTask(action, times, frameInterval, initialPhase);
         }
 
         /// <summary>
@@ -92,24 +88,6 @@ namespace AillieoUtils
         /// <param name="task">Task to unschedule.</param>
         /// <returns>Unschedule succeed.</returns>
         public static bool Unschedule(ScheduledFrameTask task)
-        {
-            switch (task)
-            {
-                case ScheduledFrameTaskDynamic taskDynamic:
-                    return Unschedule(taskDynamic);
-                case ScheduledFrameTaskStatic taskStatic:
-                    return Unschedule(taskStatic);
-            }
-
-            return false;
-        }
-
-        /// <summary>
-        /// Unschedule a task.
-        /// </summary>
-        /// <param name="task">Task to unschedule.</param>
-        /// <returns>Unschedule succeed.</returns>
-        public static bool Unschedule(ScheduledFrameTaskDynamic task)
         {
             if (task == null)
             {
@@ -125,43 +103,9 @@ namespace AillieoUtils
             return true;
         }
 
-        /// <summary>
-        /// Unschedule a task.
-        /// </summary>
-        /// <param name="task">Task to unschedule.</param>
-        /// <returns>Unschedule succeed.</returns>
-        public static bool Unschedule(ScheduledFrameTaskStatic task)
+        private static ScheduledFrameTask CreateFrameTask(Action action, int times, ushort frameInterval, int initialPhase)
         {
-            if (task == null)
-            {
-                return false;
-            }
-
-            if (task.removed)
-            {
-                return false;
-            }
-
-            task.removed = true;
-            return true;
-        }
-
-        private static ScheduledFrameTask CreateFrameTask(Action action, ScheduleMode mode, int times, ushort frameInterval, int initialPhase)
-        {
-            switch (mode)
-            {
-                case ScheduleMode.Dynamic:
-                    return CreateFrameTaskDynamic(action, times, frameInterval, initialPhase);
-                case ScheduleMode.Static:
-                    return CreateFrameTaskStatic(action, times, frameInterval, initialPhase);
-            }
-
-            throw new NotSupportedException();
-        }
-
-        private static ScheduledFrameTaskDynamic CreateFrameTaskDynamic(Action action, int times, ushort frameInterval, int initialPhase)
-        {
-            var task = new ScheduledFrameTaskDynamic()
+            var task = new ScheduledFrameTask(5)
             {
                 action = action,
                 times = times,
@@ -169,22 +113,7 @@ namespace AillieoUtils
                 counter = initialPhase,
             };
 
-            task.handle = SchedulerImpl.Instance.managedDynamicFrameTasks.AddLast(task);
-
-            return task;
-        }
-
-        private static ScheduledFrameTaskStatic CreateFrameTaskStatic(Action action, int times, ushort frameInterval, int initialPhase)
-        {
-            var task = new ScheduledFrameTaskStatic()
-            {
-                action = action,
-                times = times,
-                frameInterval = frameInterval,
-                counter = initialPhase,
-            };
-
-            SchedulerImpl.Instance.managedStaticFrameTasks.Add(task);
+            task.handle = SchedulerImpl.Instance.managedFrameTasks.AddLast(task);
 
             return task;
         }
