@@ -29,11 +29,11 @@ namespace AillieoUtils
         // delay
         internal readonly Queue<Action>[] delayQueues = new Queue<Action>[] { new Queue<Action>(), new Queue<Action>() };
 
-        // dynamic
+        // timing
         internal readonly LinkedList<ScheduledTimingTask> managedTasks = new LinkedList<ScheduledTimingTask>();
         internal readonly LinkedList<ScheduledTimingTask> managedTasksUnscaled = new LinkedList<ScheduledTimingTask>();
 
-        // dynamic
+        // frame
         internal readonly LinkedList<ScheduledFrameTask> managedFrameTasks = new LinkedList<ScheduledFrameTask>();
 
         internal readonly SynchronizationContext synchronizationContext = SynchronizationContext.Current;
