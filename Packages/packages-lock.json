@@ -5,7 +5,7 @@
       "depth": 0,
       "source": "git",
       "dependencies": {},
-      "hash": "1bbe6da2f40edb82f166eff3fb2d8bedd521cebf"
+      "hash": "a6d40351b9318dbdf932cc6be7bd77e668b0bfa3"
     },
     "com.aillieo.unity-singleton": {
       "version": "https://github.com/aillieo/UnitySingleton.git#upm",

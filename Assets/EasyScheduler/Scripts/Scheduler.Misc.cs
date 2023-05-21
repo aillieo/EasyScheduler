@@ -17,7 +17,7 @@ namespace AillieoUtils
     public static partial class Scheduler
     {
         /// <summary>
-        /// Invoke an callback on a later call stack, normally in 0 to 1 frame.
+        /// Invoke a callback on a later call stack, normally in 0 to 1 frame.
         /// </summary>
         /// <param name="action">Callback to invoke.</param>
         public static void Delay(Action action)
@@ -27,7 +27,7 @@ namespace AillieoUtils
         }
 
         /// <summary>
-        /// Asynchronously send an callback to Unity main thread to invoke.
+        /// Asynchronously send a callback to Unity main thread to invoke.
         /// </summary>
         /// <param name="action">Callback to invoke.</param>
         public static void Post(Action action)
@@ -36,7 +36,7 @@ namespace AillieoUtils
         }
 
         /// <summary>
-        /// Asynchronously send an callback to Unity main thread to invoke.
+        /// Asynchronously send a callback to Unity main thread to invoke.
         /// </summary>
         /// <param name="callback">Callback to invoke.</param>
         /// <param name="state">Object passed to the callback.</param>
@@ -46,7 +46,7 @@ namespace AillieoUtils
         }
 
         /// <summary>
-        /// Synchronously send an callback to Unity main thread to invoke.
+        /// Synchronously send a callback to Unity main thread to invoke.
         /// </summary>
         /// <param name="action">Callback to invoke.</param>
         public static void Send(Action action)
@@ -55,7 +55,7 @@ namespace AillieoUtils
         }
 
         /// <summary>
-        /// Synchronously send an callback to Unity main thread to invoke.
+        /// Synchronously send a callback to Unity main thread to invoke.
         /// </summary>
         /// <param name="callback">Callback to invoke.</param>
         /// <param name="state">Object passed to the callback.</param>
