@@ -24,12 +24,14 @@ namespace AillieoUtils
 
 #if DEVELOPMENT_BUILD || UNITY_EDITOR
         internal StackTrace creatingStackTrace;
+#endif
 
         internal ScheduledFrameTask(int skipFrames = 0)
         {
+#if DEVELOPMENT_BUILD || UNITY_EDITOR
             this.creatingStackTrace = new StackTrace(skipFrames, true);
-        }
 #endif
+        }
 
         /// <summary>
         /// Gets a value indicating whether this task is finished.
