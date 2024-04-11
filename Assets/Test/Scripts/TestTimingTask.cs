@@ -173,5 +173,27 @@ namespace AillieoUtils.Tests
 
             yield return new WaitWhile(() => rest > 0);
         }
+
+        [UnityTest]
+        public IEnumerator TestScheduleWhile()
+        {
+            int rest = 1;
+
+            int n = 0;
+            Scheduler.ScheduleWhile(
+                () =>
+                {
+                    n++;
+                    return n < 5;
+                }, 0.1f);
+
+            yield return new WaitForSeconds(1);
+
+            rest--;
+
+            Assert.AreEqual(5, n);
+
+            yield return new WaitWhile(() => rest > 0);
+        }
     }
 }

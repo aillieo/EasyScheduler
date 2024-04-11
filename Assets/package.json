@@ -1,12 +1,22 @@
 {
   "name": "com.aillieo.easy-scheduler",
   "displayName": "AillieoUtils Easy Scheduler",
-  "description": "AillieoUtils Easy Scheduler",
+  "description": "A simple scheduler implementation for Unity",
   "version": "1.0.0",
-  "unity": "2018.4",
+  "unity": "2020.3",
+  "unityRelease": "41f1",
   "license": "MIT",
   "dependencies": {
     "com.aillieo.easy-events": "https://github.com/aillieo/EasyEvent.git#upm",
     "com.aillieo.unity-singleton": "https://github.com/aillieo/UnitySingleton.git#upm"
+  },
+  "keywords": [
+    "scheduler",
+    "timer"
+  ],
+  "author": {
+    "name": "Aillieo",
+    "email": "aillieo@163.com",
+    "url": "https://github.com/aillieo"
   }
 }

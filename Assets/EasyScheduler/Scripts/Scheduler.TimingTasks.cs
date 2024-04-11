@@ -132,6 +132,112 @@ namespace AillieoUtils
         }
 
         /// <summary>
+        /// Schedule a task while a condition is true.
+        /// </summary>
+        /// <param name="func">The condition to check.</param>
+        /// <param name="interval">Interval between executions.</param>
+        /// <returns>Scheduled task.</returns>
+        public static ScheduledTimingTask ScheduleWhile(Func<bool> func, float interval)
+        {
+            ScheduledTimingTask tsk = default;
+            void action()
+            {
+                if (!func())
+                {
+                    tsk.Unschedule();
+                }
+            }
+
+            tsk = CreateTask(
+                action,
+                -1,
+                interval,
+                0,
+                false);
+            return tsk;
+        }
+
+        /// <summary>
+        /// Schedule a task while a condition is true.
+        /// </summary>
+        /// <param name="func">The condition to check.</param>
+        /// <param name="interval">Interval between executions.</param>
+        /// <param name="delay">Time before first execution.</param>
+        /// <returns>Scheduled task.</returns>
+        public static ScheduledTimingTask ScheduleWithDelayWhile(Func<bool> func, float interval, float delay)
+        {
+            ScheduledTimingTask tsk = default;
+            void action()
+            {
+                if (!func())
+                {
+                    tsk.Unschedule();
+                }
+            }
+
+            tsk = CreateTask(
+                action,
+                -1,
+                interval,
+                delay,
+                false);
+            return tsk;
+        }
+
+        /// <summary>
+        /// Schedule a task while a condition is true ignoring <see cref="UnityEngine.Time.timeScale"/>>.
+        /// </summary>
+        /// <param name="func">The condition to check.</param>
+        /// <param name="interval">Interval between executions.</param>
+        /// <returns>Scheduled task.</returns>
+        public static ScheduledTimingTask ScheduleUnscaledWhile(Func<bool> func, float interval)
+        {
+            ScheduledTimingTask tsk = default;
+            void action()
+            {
+                if (!func())
+                {
+                    tsk.Unschedule();
+                }
+            }
+
+            tsk = CreateTask(
+                action,
+                -1,
+                interval,
+                0,
+                true);
+            return tsk;
+        }
+
+        /// <summary>
+        /// Schedule a task while a condition is true ignoring <see cref="UnityEngine.Time.timeScale"/>>.
+        /// </summary>
+        /// <param name="func">The condition to check.</param>
+        /// <param name="interval">Interval between executions.</param>
+        /// <param name="delay">Time before first execution.</param>
+        /// <returns>Scheduled task.</returns>
+        public static ScheduledTimingTask ScheduleWithDelayUnscaledWhile(Func<bool> func, float interval, float delay)
+        {
+            ScheduledTimingTask tsk = default;
+            void action()
+            {
+                if (!func())
+                {
+                    tsk.Unschedule();
+                }
+            }
+
+            tsk = CreateTask(
+                action,
+                -1,
+                interval,
+                delay,
+                true);
+            return tsk;
+        }
+
+        /// <summary>
         /// Unschedule a task.
         /// </summary>
         /// <param name="task">Task to unschedule.</param>

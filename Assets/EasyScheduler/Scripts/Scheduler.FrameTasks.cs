@@ -83,6 +83,57 @@ namespace AillieoUtils
         }
 
         /// <summary>
+        /// Schedule a task by frame while a condition is true.
+        /// </summary>
+        /// <param name="func">The condition function.</param>
+        /// <param name="frameInterval">Frame count between executions.</param>
+        /// <returns>Scheduled task.</returns>
+        public static ScheduledFrameTask ScheduleByFrameWhile(Func<bool> func, ushort frameInterval)
+        {
+            ScheduledFrameTask tsk = default;
+            void action()
+            {
+                if (!func())
+                {
+                    tsk.Unschedule();
+                }
+            }
+
+            tsk = CreateFrameTask(
+                action,
+                -1,
+                frameInterval,
+                0);
+            return tsk;
+        }
+
+        /// <summary>
+        /// Schedule a task by frame while a condition is true.
+        /// </summary>
+        /// <param name="func">The condition function.</param>
+        /// <param name="frameInterval">Frame count between executions.</param>
+        /// <param name="initialPhase">Frame starting count in the first period.</param>
+        /// <returns>Scheduled task.</returns>
+        public static ScheduledFrameTask ScheduleByFrameWhile(Func<bool> func, ushort frameInterval, int initialPhase)
+        {
+            ScheduledFrameTask tsk = default;
+            void action()
+            {
+                if (!func())
+                {
+                    tsk.Unschedule();
+                }
+            }
+
+            tsk = CreateFrameTask(
+                action,
+                -1,
+                frameInterval,
+                initialPhase);
+            return tsk;
+        }
+
+        /// <summary>
         /// Unschedule a task.
         /// </summary>
         /// <param name="task">Task to unschedule.</param>

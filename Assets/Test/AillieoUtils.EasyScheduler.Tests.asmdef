@@ -1,10 +1,10 @@
 {
     "name": "AillieoUtils.EasyScheduler.Tests",
+    "rootNamespace": "",
     "references": [
         "UnityEngine.TestRunner",
         "UnityEditor.TestRunner",
         "AillieoUtils.EasyScheduler",
-        "AillieoUtils.EasyEvents",
         "AillieoUtils.UnitySingleton"
     ],
     "includePlatforms": [],
